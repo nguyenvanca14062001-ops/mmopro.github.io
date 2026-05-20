@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "type-check": "vue-tsc --build --force"
+    "type-check": "vue-tsc --build --force",
+    "deploy": "vite build && gh-pages -d dist"
   },
   "dependencies": {
     "@nuxt/ui": "^4.7.1",
     "@tailwindcss/postcss": "^4.2.4",
     "@vueuse/core": "^14.2.1",
     "firebase": "^12.12.1",
+    "sweetalert2": "^11.26.24",
     "vant": "^4.9.24",
     "vue": "^3.5.32",
     "vue-router": "^4.6.4"
@@ -24,6 +26,7 @@
     "@vitejs/plugin-vue": "^6.0.6",
     "@vue/tsconfig": "^0.9.1",
     "autoprefixer": "^10.5.0",
+    "gh-pages": "^6.3.0",
     "npm-run-all2": "^8.0.4",
     "postcss": "^8.5.12",
     "tailwindcss": "^4.2.4",

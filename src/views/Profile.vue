@@ -8,9 +8,9 @@ const router = useRouter()
 const userUid = ref('')
 const userData = ref<any>(null)
 const reports = ref<any[]>([])
-const isPageLoading = ref(true) // Thêm trạng thái loading cho chuyên nghiệp
+const isPageLoading = ref(true) 
 
-// Thống kê
+// Thống kê (Dữ liệu thật từ Firebase)
 const stats = computed(() => {
   const total = reports.value.length
   const approved = reports.value.filter(r => r.status === 'approved').length
@@ -23,18 +23,21 @@ const stats = computed(() => {
   return { total, approved, pending, rejected, totalEarned }
 })
 
+// ==========================================
+// LOGIC MỐC DUY NHẤT: 10 ĐƠN DUYỆT THƯỞNG 300K
+// ==========================================
+const progress10 = computed(() => Math.min((stats.value.approved / 10) * 100, 100))
+const canClaim10 = computed(() => stats.value.approved >= 10)
+
 onMounted(() => {
-  // Lắng nghe trạng thái đăng nhập để đảm bảo auth.currentUser không bị null
   auth.onAuthStateChanged((user) => {
     if (user) {
       userUid.value = user.uid
       
-      // Lấy thông tin user
       onSnapshot(doc(db, "users", user.uid), (snap) => {
         if (snap.exists()) userData.value = snap.data()
       })
       
-      // Lấy lịch sử để thống kê
       const q = query(collection(db, "reports"), where("uid", "==", user.uid))
       onSnapshot(q, (snap) => {
         reports.value = snap.docs.map(d => d.data())
@@ -48,54 +51,112 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#090e17] py-10 px-4 flex flex-col items-center font-black italic uppercase text-left">
-    <div v-if="isPageLoading" class="text-blue-500 animate-pulse mt-20">ĐANG TẢI DỮ LIỆU...</div>
+  <div class="min-h-screen bg-[#090e17] py-6 px-3 flex flex-col items-center font-black italic uppercase text-left selection:bg-blue-500/30">
+    
+    <!-- ĐỊNH NGHĨA GRADIENT CHO ĐỒNG XU -->
+    <svg width="0" height="0" class="absolute">
+      <defs>
+        <linearGradient id="globalGoldCoin" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#fde047" />
+          <stop offset="50%" style="stop-color:#eab308" />
+          <stop offset="100%" style="stop-color:#854d0e" />
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <div v-if="isPageLoading" class="text-blue-500 animate-pulse mt-10 text-xs">ĐANG TẢI...</div>
     
     <div v-else class="w-full max-w-2xl">
       <!-- Nút Quay lại -->
-      <button @click="router.back()" class="text-slate-500 hover:text-white flex items-center gap-2 text-xs mb-8 transition-colors">
-        <span class="font-sans not-italic">✕</span> TRỞ LẠI
+      <button @click="router.back()" class="text-slate-500 hover:text-white flex items-center gap-1.5 text-[9px] mb-4 transition-colors tracking-[2px]">
+        <span class="font-sans not-italic text-sm leading-none">✕</span> TRỞ LẠI
       </button>
 
-      <h1 class="text-4xl text-white mb-10 tracking-tighter">HỒ SƠ <span class="text-blue-500">CÁ NHÂN</span></h1>
+      <h1 class="text-2xl text-white mb-5 tracking-tighter drop-shadow-lg">HỒ SƠ <span class="text-blue-500">CÁ NHÂN</span></h1>
 
       <!-- Card chính -->
-      <div class="bg-[#111726] rounded-[40px] p-8 border border-slate-800/50 shadow-2xl space-y-10">
+      <div class="bg-[#111726] rounded-3xl p-4 md:p-6 border border-slate-800/50 shadow-2xl relative overflow-hidden">
         
+        <div class="absolute -right-10 -top-10 w-40 h-40 bg-blue-600/5 rounded-full blur-[50px]"></div>
+
         <!-- Info cơ bản -->
-        <div class="flex items-center gap-6 pb-10 border-b border-slate-800/50">
-          <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-4xl shadow-lg">👤</div>
+        <div class="flex items-center gap-4 pb-4 border-b border-slate-800/50 relative z-10">
+          <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(37,99,235,0.3)]">👤</div>
           <div>
-            <h2 class="text-2xl text-white leading-none mb-2">{{ userData?.username || 'MEMBER' }}</h2>
-            <p class="text-blue-500 text-[10px] tracking-[2px]">CẤP BẬC: <span class="text-white">THÀNH VIÊN VIP</span></p>
+            <h2 class="text-lg text-white leading-none mb-1.5">{{ userData?.username || 'MEMBER' }}</h2>
+            <div class="inline-flex items-center gap-1.5 bg-blue-500/10 text-blue-400 text-[8px] px-2 py-0.5 rounded-full border border-blue-500/20">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span> CẤP BẬC: THÀNH VIÊN VIP
+            </div>
           </div>
         </div>
 
         <!-- Grid thống kê -->
-        <div class="grid grid-cols-2 gap-4">
-          <div class="bg-[#0d121f] p-6 rounded-3xl border border-slate-800/30 shadow-inner">
-            <p class="text-slate-500 text-[10px] mb-1">TỔNG THU NHẬP</p>
-            <p class="text-emerald-400 text-2xl tracking-tighter">{{ stats.totalEarned.toLocaleString() }}Đ</p>
+        <div class="grid grid-cols-2 gap-2 mt-4 mb-4 relative z-10">
+          <div class="bg-[#090d14] p-3 md:p-4 rounded-2xl border border-slate-800/50 shadow-inner">
+            <p class="text-slate-500 text-[8px] tracking-[1px] mb-2">TỔNG THU NHẬP</p>
+            <div class="flex items-center gap-1.5">
+               <p class="text-emerald-400 text-lg md:text-xl tracking-tighter">{{ stats.totalEarned.toLocaleString() }}</p>
+               <div class="flex flex-col items-center translate-y-[-1px]">
+                  <svg class="w-4 h-4 drop-shadow-[0_0_5px_rgba(234,179,8,0.6)]" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" fill="url(#globalGoldCoin)" />
+                    <path d="M12 7v10M9 10h6M9 14h6" stroke="#854d0e" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                  <span class="text-[7px] text-yellow-500 font-black not-italic leading-none">XU</span>
+               </div>
+            </div>
           </div>
-          <div class="bg-[#0d121f] p-6 rounded-3xl border border-slate-800/30 shadow-inner">
-            <p class="text-slate-500 text-[10px] mb-1">ĐƠN ĐÃ NỘP</p>
-            <p class="text-white text-2xl tracking-tighter">{{ stats.total }}</p>
+          <div class="bg-[#090d14] p-3 md:p-4 rounded-2xl border border-slate-800/50 shadow-inner">
+            <p class="text-slate-500 text-[8px] tracking-[1px] mb-1">ĐƠN ĐÃ NỘP</p>
+            <p class="text-white text-lg md:text-xl tracking-tighter">{{ stats.total }}</p>
           </div>
         </div>
 
         <!-- Chi tiết trạng thái -->
-        <div class="space-y-4">
-          <div class="flex justify-between items-center bg-[#0d121f] p-5 rounded-2xl border-l-4 border-emerald-500 transition-transform hover:scale-[1.02]">
-            <span class="text-slate-400 text-sm">ĐÃ ĐƯỢC DUYỆT</span>
-            <span class="text-emerald-500 text-xl font-black italic">{{ stats.approved }}</span>
+        <div class="space-y-2 mb-6 relative z-10">
+          <div class="flex justify-between items-center bg-[#090d14] p-3 rounded-xl border-l-4 border-emerald-500 text-[10px]">
+            <span class="text-slate-400">ĐÃ ĐƯỢC DUYỆT</span>
+            <span class="text-emerald-500 font-black italic">{{ stats.approved }}</span>
           </div>
-          <div class="flex justify-between items-center bg-[#0d121f] p-5 rounded-2xl border-l-4 border-yellow-500 transition-transform hover:scale-[1.02]">
-            <span class="text-slate-400 text-sm">ĐANG CHỜ XỬ LÝ</span>
-            <span class="text-yellow-500 text-xl font-black italic">{{ stats.pending }}</span>
+          <div class="flex justify-between items-center bg-[#090d14] p-3 rounded-xl border-l-4 border-yellow-500 text-[10px]">
+            <span class="text-slate-400">ĐANG CHỜ XỬ LÝ</span>
+            <span class="text-yellow-500 font-black italic">{{ stats.pending }}</span>
           </div>
-          <div class="flex justify-between items-center bg-[#0d121f] p-5 rounded-2xl border-l-4 border-red-500 transition-transform hover:scale-[1.02]">
-            <span class="text-slate-400 text-sm">ĐƠN BỊ TỪ CHỐI</span>
-            <span class="text-red-500 text-xl font-black italic">{{ stats.rejected }}</span>
+          <div class="flex justify-between items-center bg-[#090d14] p-3 rounded-xl border-l-4 border-red-500 text-[10px]">
+            <span class="text-slate-400">ĐƠN BỊ TỪ CHỐI</span>
+            <span class="text-red-500 font-black italic">{{ stats.rejected }}</span>
+          </div>
+        </div>
+
+        <!-- MỐC THƯỞNG NHIỆM VỤ -->
+        <div class="pt-5 border-t border-slate-800/50 relative z-10">
+          <h3 class="text-xs text-white mb-4 flex items-center gap-2">
+            <span class="text-lg">🎁</span> NHIỆM VỤ THƯỞNG THÊM
+          </h3>
+
+          <div class="relative bg-[#090d14] p-4 md:p-5 rounded-2xl border border-slate-800/50 overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-600/10 rounded-full blur-[30px]"></div>
+            
+            <div class="flex justify-between items-end mb-3 relative z-10">
+              <div>
+                <h4 class="text-white text-[11px] md:text-sm tracking-tighter">THƯỞNG MỐC 10 ĐƠN</h4>
+                <p class="text-emerald-400 text-[9px] md:text-[11px] mt-1 drop-shadow-sm">+300.000 XU THƯỞNG THÊM</p>
+              </div>
+              <span class="text-slate-500 text-[9px] md:text-[10px]">TIẾN ĐỘ: {{ stats.approved }}/10</span>
+            </div>
+            
+            <div class="h-2 w-full bg-[#111726] rounded-full overflow-hidden shadow-inner relative z-10">
+              <div class="h-full bg-gradient-to-r from-emerald-600 to-teal-400 transition-all duration-1000 relative" 
+                   :style="{ width: progress10 + '%' }">
+                <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+              </div>
+            </div>
+            
+            <button v-if="canClaim10" class="mt-4 w-full py-2.5 bg-emerald-500 text-black rounded-lg text-[9px] font-black hover:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] relative z-10">
+              NHẬN THƯỞNG 300K XU NGAY
+            </button>
+            <p v-else class="mt-4 text-center text-slate-600 text-[8px] tracking-widest opacity-60 relative z-10 uppercase">
+              HOÀN THÀNH THÊM {{ Math.max(0, 10 - stats.approved) }} ĐƠN NỮA
+            </p>
           </div>
         </div>
 
@@ -103,3 +164,7 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.tracking-tighter { letter-spacing: -0.05em; }
+</style>

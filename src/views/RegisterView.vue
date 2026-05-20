@@ -3,7 +3,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth, db } from '@/firebase'
 import { createUserWithEmailAndPassword } from "firebase/auth"
-import { doc, setDoc } from "firebase/firestore"
+import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore"
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const fullName = ref('')
@@ -16,38 +17,158 @@ const loading = ref(false)
 
 const handleRegister = async () => {
   if (!fullName.value || !email.value || !phone.value || !username.value || !password.value) {
-    alert('⚠️ VUI LÒNG ĐIỀN ĐỦ THÔNG TIN!')
+    Swal.fire({
+      title: 'THIẾU THÔNG TIN!',
+      text: 'Vui lòng điền đầy đủ các trường để tiếp tục.',
+      icon: 'warning',
+      background: '#ffffff',
+      color: '#1e293b',
+      confirmButtonText: 'ĐÃ HIỂU',
+      confirmButtonColor: '#f59e0b',
+      customClass: {
+        popup: 'rounded-[30px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100',
+        title: 'font-black italic uppercase text-2xl text-slate-800',
+        htmlContainer: 'font-bold text-sm text-slate-500 normal-case',
+        confirmButton: 'font-black uppercase italic rounded-xl px-8 py-3 shadow-lg active:scale-95 transition-all text-sm'
+      }
+    })
     return
   }
 
   loading.value = true
   try {
+    // 1. KIỂM TRA TRÙNG USERNAME TRƯỚC KHI TẠO TÀI KHOẢN
+    const usernameToCheck = username.value.toLowerCase().trim()
+    const usersRef = collection(db, "users")
+    const q = query(usersRef, where("username", "==", usernameToCheck))
+    const querySnapshot = await getDocs(q)
+
+    if (!querySnapshot.empty) {
+      Swal.fire({
+        title: 'TRÙNG TÊN ĐĂNG NHẬP!',
+        text: 'Tên đăng nhập này đã có người sử dụng. Vui lòng chọn tên khác!',
+        icon: 'error',
+        background: '#ffffff',
+        color: '#1e293b',
+        confirmButtonText: 'THỬ LẠI',
+        confirmButtonColor: '#ef4444',
+        customClass: {
+          popup: 'rounded-[30px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100',
+          title: 'font-black italic uppercase text-2xl text-slate-800',
+          htmlContainer: 'font-bold text-sm text-slate-500 normal-case',
+          confirmButton: 'font-black uppercase italic rounded-xl px-8 py-3 shadow-lg active:scale-95 transition-all text-sm'
+        }
+      })
+      loading.value = false
+      return 
+    }
+
+    // ==========================================================
+    // BUNG POPUP HỎI NGÀY SINH (GIAO DIỆN SÁNG ĐẸP)
+    // ==========================================================
+    const { value: dobInput, isConfirmed } = await Swal.fire({
+      title: '🎂 BẠN SINH NĂM NÀO?',
+      text: 'Vui lòng chọn ngày sinh để hoàn tất hồ sơ',
+      input: 'date',
+      background: '#ffffff',
+      color: '#1e293b',
+      allowOutsideClick: false, 
+      showCancelButton: true,
+      cancelButtonText: 'HỦY BỎ',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'HOÀN TẤT ĐĂNG KÝ 🚀',
+      confirmButtonColor: '#2563eb',
+      customClass: {
+        popup: 'rounded-[30px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 p-6',
+        title: 'font-black italic uppercase text-2xl md:text-3xl text-slate-800 mb-2',
+        htmlContainer: 'font-bold text-xs text-slate-500 normal-case',
+        input: 'font-black italic text-slate-700 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-center outline-none focus:border-blue-500 w-4/5 mx-auto shadow-inner',
+        confirmButton: 'font-black uppercase italic rounded-[15px] px-6 py-3 shadow-lg active:scale-95 transition-all text-[11px] md:text-xs',
+        cancelButton: 'font-black uppercase italic rounded-[15px] px-6 py-3 shadow-lg active:scale-95 transition-all text-[11px] md:text-xs text-white'
+      },
+      preConfirm: (val) => {
+        if (!val) {
+          Swal.showValidationMessage('Bạn chưa chọn ngày sinh kìa!');
+          return false;
+        }
+        return val;
+      }
+    });
+
+    // Nếu khách bấm HỦY BỎ giữa chừng thì ngưng đăng ký luôn
+    if (!isConfirmed || !dobInput) {
+      loading.value = false;
+      return;
+    }
+
+    // Tự động tính ra tuổi (age) từ ngày sinh (dob) để nhét vào DB
+    const birthYear = new Date(dobInput).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const calculatedAge = currentYear - birthYear;
+    // ==========================================================
+
+    // 2. TẠO TÀI KHOẢN BẰNG AUTH THÀNH CÔNG
     const userCredential = await createUserWithEmailAndPassword(
       auth, 
-      email.value.trim(), 
+      email.value.toLowerCase().trim(), 
       password.value
     )
     
     const user = userCredential.user
 
+    // 3. LƯU ĐẦY ĐỦ VÀO DATABASE (THÊM dob VÀ age VỪA HỎI ĐƯỢC)
     await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      fullName: fullName.value,
-      username: username.value.toLowerCase().trim(),
-      email: email.value.toLowerCase().trim(),
-      phone: phone.value.trim(), 
+      username: username.value,
+      fullName: fullName.value, 
+      phone: phone.value,       
+      email: email.value,
+      dob: dobInput,            // Lưu chuỗi ngày sinh (VD: 2001-06-14)
+      age: calculatedAge,       // Lưu số tuổi (VD: 25)
       balance: 0,
-      createdAt: new Date().toISOString()
+      site: 'mmo',              
+      role: 'user',             
+      createdAt: new Date()
+    });
+
+    // 4. THÔNG BÁO THÀNH CÔNG VÀ ĐÁ THẲNG VÀO TRANG CHỦ
+    Swal.fire({
+      title: 'ĐĂNG KÝ THÀNH CÔNG!',
+      text: 'Chào mừng bạn gia nhập hệ thống MMO PRO.',
+      icon: 'success',
+      background: '#ffffff',
+      color: '#1e293b',
+      confirmButtonText: 'VÀO NGAY 🚀',
+      confirmButtonColor: '#2563eb',
+      customClass: {
+        popup: 'rounded-[30px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100',
+        title: 'font-black italic uppercase text-2xl text-slate-800',
+        htmlContainer: 'font-bold text-sm text-slate-500 normal-case',
+        confirmButton: 'font-black uppercase italic rounded-xl px-8 py-3 shadow-lg active:scale-95 transition-all text-sm'
+      }
+    }).then(() => {
+      router.push('/') 
     })
 
-    alert('✅ ĐĂNG KÝ THÀNH CÔNG!')
-    router.push('/') 
   } catch (error: any) {
     let msg = error.message
-    if (error.code === 'auth/email-already-in-use') msg = 'Email này đã được đăng ký!'
-    if (error.code === 'auth/weak-password') msg = 'Mật khẩu phải từ 6 ký tự trở lên!'
+    if (error.code === 'auth/email-already-in-use') msg = 'Email này đã được đăng ký trên hệ thống!'
+    if (error.code === 'auth/weak-password') msg = 'Mật khẩu quá yếu, phải từ 6 ký tự trở lên!'
     
-    alert('❌ LỖI: ' + msg)
+    Swal.fire({
+      title: 'LỖI ĐĂNG KÝ!',
+      text: msg,
+      icon: 'error',
+      background: '#ffffff',
+      color: '#1e293b',
+      confirmButtonText: 'ĐÓNG',
+      confirmButtonColor: '#ef4444',
+      customClass: {
+        popup: 'rounded-[30px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100',
+        title: 'font-black italic uppercase text-2xl text-slate-800',
+        htmlContainer: 'font-bold text-sm text-slate-500 normal-case',
+        confirmButton: 'font-black uppercase italic rounded-xl px-8 py-3 shadow-lg active:scale-95 transition-all text-sm'
+      }
+    })
   } finally {
     loading.value = false
   }
@@ -91,7 +212,7 @@ const handleRegister = async () => {
             <input v-model="email" type="email" placeholder="NAME@EXAMPLE.COM..." class="w-full bg-slate-50 border border-slate-100 rounded-[20px] py-4 px-6 text-slate-700 outline-none focus:border-blue-500 font-black italic text-xs shadow-inner uppercase transition-all" />
           </div>
 
-          <!-- TRƯỜNG SĐT VÀ CÂU CẢNH BÁO ĐÃ ĐƯỢC CHỈNH SỬA -->
+          <!-- TRƯỜNG SĐT VÀ CÂU CẢNH BÁO -->
           <div class="space-y-1 font-black">
             <label class="text-[11px] font-black text-slate-400 uppercase italic ml-1">Số điện thoại</label>
             <input v-model="phone" type="tel" placeholder="0912345678..." class="w-full bg-slate-50 border border-slate-100 rounded-[20px] py-4 px-6 text-slate-700 outline-none focus:border-blue-500 font-black italic text-xs shadow-inner uppercase transition-all" />

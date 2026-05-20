@@ -1,56 +1,118 @@
 <script setup lang="ts">
-defineProps<{ 
-  isLoggedIn: boolean; 
-  isDataLoading: boolean; 
-  myReports: any[] 
-}>();
+// Props nhận dữ liệu từ App.vue truyền xuống
+defineProps<{
+  myReports: any[]
+  isLoggedIn: boolean
+  isDataLoading: boolean
+}>()
+
+const formatNumber = (num: number) => {
+  return num.toLocaleString('vi-VN')
+}
 </script>
 
 <template>
-  <section v-if="isLoggedIn" id="history-section" class="space-y-10 scroll-mt-32 font-black italic uppercase italic">
-    <div class="flex items-center gap-4 text-left font-black italic uppercase italic">
-      <div class="w-2.5 h-10 bg-blue-500 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] font-black italic uppercase italic"></div>
-      <h3 class="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter leading-none font-black italic uppercase italic font-black">LỊCH SỬ <span class="text-blue-500 font-black italic uppercase italic font-black">HOẠT ĐỘNG</span></h3>
+  <div class="space-y-6">
+    <!-- ĐỊNH NGHĨA GRADIENT CHO ĐỒNG XU (PHẢI CÓ ĐỂ HIỆN MÀU VÀNG) -->
+    <svg width="0" height="0" class="absolute">
+      <defs>
+        <linearGradient id="historyGoldCoin" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#fde047" />
+          <stop offset="50%" style="stop-color:#eab308" />
+          <stop offset="100%" style="stop-color:#854d0e" />
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-1.5 h-8 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
+      <h2 class="text-2xl md:text-3xl text-white font-black italic uppercase tracking-tighter">
+        LỊCH SỬ <span class="text-blue-500">HOẠT ĐỘNG</span>
+      </h2>
     </div>
 
-    <div v-if="isDataLoading" class="space-y-5 font-black italic uppercase italic">
-      <div v-for="n in 3" :key="n" class="bg-[#111726] p-8 rounded-[40px] border border-slate-800 animate-pulse font-black italic uppercase italic h-28"></div>
+    <!-- NẾU CHƯA ĐĂNG NHẬP -->
+    <div v-if="!isLoggedIn" class="bg-[#111726] border border-slate-800 rounded-[30px] p-12 text-center">
+      <p class="text-slate-500 font-bold italic uppercase tracking-widest text-xs">Vui lòng đăng nhập để xem lịch sử của bạn</p>
     </div>
 
-    <div v-else-if="myReports.length === 0" class="bg-[#111726] p-16 rounded-[50px] border border-slate-800 text-center shadow-inner opacity-50 font-black italic uppercase italic">
-       <p class="text-slate-600 text-xs tracking-[4px] font-black italic uppercase italic font-black">CHƯA CÓ GIAO DỊCH NÀO</p>
+    <!-- NẾU ĐANG TẢI DỮ LIỆU -->
+    <div v-else-if="isDataLoading" class="text-center py-10">
+      <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-slate-500 text-[10px] font-black italic uppercase">Đang đồng bộ dữ liệu...</p>
     </div>
 
-    <div v-else class="space-y-5 font-black italic uppercase italic">
-      <div v-for="r in myReports" :key="r.id" class="bg-[#111726] p-8 rounded-[40px] border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 group hover:border-slate-700 transition-all shadow-xl font-black italic uppercase italic">
+    <!-- DANH SÁCH LỊCH SỬ -->
+    <div v-else class="space-y-4">
+      <div v-for="item in myReports" :key="item.id" 
+           class="group bg-[#111726]/50 border border-slate-800/50 hover:border-blue-500/30 p-5 md:p-6 rounded-[25px] flex items-center justify-between transition-all duration-300 shadow-lg relative overflow-hidden">
         
-        <div class="space-y-1 font-black italic uppercase italic text-left">
-          <p class="text-[9px] text-blue-500 tracking-[3px] font-black uppercase italic uppercase italic font-black">{{ r.displayTime || r.createdAt?.split('T')[0] || 'VỪA XONG' }}</p>
-          
-          <!-- HIỂN THỊ TÊN: RÚT TIỀN HOẶC TÊN NHIỆM VỤ -->
-          <h4 class="text-white text-lg font-black tracking-tight leading-none italic uppercase italic uppercase italic font-black">
-            {{ r.type === 'withdraw' ? '🏦 RÚT TIỀN VỀ VÍ' : r.jobName }}
-          </h4>
-          
-          <!-- THÔNG TIN KÈM THEO -->
-          <p v-if="r.type === 'withdraw'" class="text-[10px] text-slate-400 opacity-80 mt-2 font-black italic uppercase italic leading-tight italic uppercase italic font-black">{{ r.bankInfo }}</p>
-          <p v-if="r.status === 'rejected'" class="text-[10px] text-red-500 lowercase opacity-80 mt-2 font-black italic uppercase italic leading-tight italic uppercase italic font-black">Lý do: {{ r.note || 'Sai thông tin' }}</p>
+        <!-- Hiệu ứng sáng khi hover -->
+        <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+        <div class="relative z-10 flex flex-col gap-1">
+          <span class="text-blue-500 text-[9px] font-black tracking-[2px] opacity-80">{{ item.displayTime }}</span>
+          <h3 class="text-white text-xs md:text-sm font-black italic uppercase tracking-tight">
+            {{ item.type === 'withdraw' ? '🏦 RÚT TIỀN VỀ VÍ' : item.jobName }}
+          </h3>
+          <p v-if="item.type === 'withdraw'" class="text-slate-500 text-[9px] normal-case font-bold opacity-70">
+            {{ item.bankInfo }}
+          </p>
         </div>
 
-        <div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end font-black italic uppercase italic">
-          <div class="text-right leading-none font-black italic uppercase italic">
+        <div class="relative z-10 flex items-center gap-4 md:gap-6">
+          <!-- SỐ TIỀN VÀ BIỂU TƯỢNG XU -->
+          <div class="flex items-center gap-2">
+            <span :class="[
+              'text-lg md:text-2xl font-black italic tracking-tighter',
+              item.type === 'withdraw' ? 'text-rose-500' : 'text-emerald-400'
+            ]">
+              {{ item.type === 'withdraw' ? '-' : '+' }}{{ formatNumber(item.reward || item.amount || 0) }}
+            </span>
             
-            <!-- ĐỔI MÀU: RÚT LÀ ĐỎ (-), NHIỆM VỤ LÀ XANH (+) -->
-            <p :class="r.type === 'withdraw' ? 'text-red-400' : 'text-emerald-400'" class="font-black text-2xl italic tracking-tighter leading-none font-black italic uppercase italic font-black">
-              {{ r.type === 'withdraw' ? '-' : '+' }}{{ (r.type === 'withdraw' ? r.amount : r.reward)?.toLocaleString() }}đ
-            </p>
+            <div class="flex flex-col items-center translate-y-[-1px]">
+              <svg class="w-5 h-5 md:w-6 md:h-6 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="url(#historyGoldCoin)" />
+                <path d="M12 7v10M9 10h6M9 14h6" stroke="#854d0e" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <span class="text-[8px] text-yellow-500 font-black not-italic leading-none mt-1">XU</span>
+            </div>
           </div>
-          
-          <div :class="['px-6 py-3 rounded-2xl text-[10px] tracking-[2px] font-black italic border transition-all uppercase italic uppercase italic font-black', r.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' : r.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20']">
-            {{ r.status === 'pending' ? 'ĐANG CHỜ' : r.status === 'approved' ? 'THÀNH CÔNG' : 'THẤT BẠI' }}
+
+          <!-- TRẠNG THÁI -->
+          <div class="min-w-[90px] text-right">
+            <span v-if="item.status === 'approved' || item.status === 'completed'" 
+                  class="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[8px] md:text-[9px] font-black rounded-lg uppercase italic tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+              THÀNH CÔNG
+            </span>
+            <span v-else-if="item.status === 'pending'" 
+                  class="px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-[8px] md:text-[9px] font-black rounded-lg uppercase italic tracking-widest shadow-[0_0_15px_rgba(234,179,8,0.1)]">
+              ĐANG CHỜ
+            </span>
+            <span v-else
+                  class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[8px] md:text-[9px] font-black rounded-lg uppercase italic tracking-widest shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+              BỊ TỪ CHỐI
+            </span>
           </div>
         </div>
       </div>
+
+      <!-- KHI KHÔNG CÓ DỮ LIỆU -->
+      <div v-if="myReports.length === 0" class="text-center py-20 bg-[#111726]/30 rounded-[30px] border border-dashed border-slate-800">
+        <p class="text-slate-600 font-black italic uppercase text-[10px] tracking-[4px]">Chưa có hoạt động nào được ghi lại</p>
+      </div>
     </div>
-  </section>
+  </div>
 </template>
+
+<style scoped>
+/* Hiệu ứng trượt nhẹ khi xuất hiện */
+.group {
+  animation: slideIn 0.5s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>

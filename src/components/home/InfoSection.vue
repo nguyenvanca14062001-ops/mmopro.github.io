@@ -3,7 +3,7 @@
 const emit = defineEmits(['contactSupport']);
 const faqs = [
   { id: '01', q: 'KHI NÀO TÔI NHẬN ĐƯỢC TIỀN?', a: 'TIỀN THƯỞNG SẼ CỘNG VÀO VÍ TRONG VÒNG 1 GIỜ NGAY SAU KHI NỘP ẢNH BẰNG CHỨNG HỢP LỆ.' },
-  { id: '02', q: 'RÚT TIỀN TỐI THIỂU LÀ BAO NHIÊU?', a: 'HẠN MỨC RÚT TỐI THIỂU TỪ 50.000Đ VỀ MỌI NGÂN HÀNG VIỆT NAM 24/7.' },
+  { id: '02', q: 'RÚT TIỀN TỐI THIỂU LÀ BAO NHIÊU?', a: 'HẠN MỨC RÚT TỐI THIỂU TỪ 200.000 xu VỀ MỌI NGÂN HÀNG VIỆT NAM 24/7.' },
   { id: '03', q: 'LÀM NHIỀU VIỆC CÙNG LÚC ĐƯỢC KHÔNG?', a: 'HOÀN TOÀN ĐƯỢC! BẠN CÓ THỂ THỰC HIỆN TẤT CẢ NHIỆM VỤ HIỂN THỊ ĐỂ GIA TĂNG THU NHẬP.' },
   { id: '04', q: 'TẠI SAO BẰNG CHỨNG BỊ TỪ CHỐI?', a: 'VUI LÒNG ĐẢM BẢO ẢNH CHỤP MÀN HÌNH RÕ NÉT, KHÔNG CẮT GHÉP VÀ LÀM ĐÚNG YÊU CẦU.' }
 ];

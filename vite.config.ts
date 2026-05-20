@@ -9,7 +9,7 @@ export default defineConfig({
    * VÌ REPO CỦA MÀY LÀ mmopro.github.io (DẠNG USER PAGE), 
    * NÊN BASE PHẢI ĐỂ LÀ '/' ĐỂ LOAD ĐÚNG ASSETS TỪ THƯ MỤC GỐC.
    */
-  base: '/', 
+  base: '/',
 
   plugins: [
     vue(),

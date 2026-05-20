@@ -2,11 +2,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth, db } from '@/firebase'
-import { signInWithEmailAndPassword } from "firebase/auth"
-import { collection, query, where, getDocs } from "firebase/firestore"
+import { signInWithEmailAndPassword, signOut } from "firebase/auth"
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
 
 const router = useRouter()
-const loginInput = ref('') // Nhận vào Email hoặc Tên đăng nhập
+const loginInput = ref('') 
 const password = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
@@ -21,9 +21,7 @@ const handleLogin = async () => {
   try {
     let emailToSignIn = loginInput.value.trim().toLowerCase()
 
-    // 1. Logic Đăng nhập 2 trong 1: Nếu không có "@", hệ thống coi là Username
     if (!emailToSignIn.includes('@')) {
-      // ĐOẠN NÀY DỄ BỊ LỖI PERMISSION NẾU RULES CHẶN
       const q = query(collection(db, "users"), where("username", "==", emailToSignIn))
       const querySnapshot = await getDocs(q)
       
@@ -33,15 +31,26 @@ const handleLogin = async () => {
       emailToSignIn = querySnapshot.docs[0]?.data()?.email
     }
 
-    // 2. Thực hiện đăng nhập chính thức
-    await signInWithEmailAndPassword(auth, emailToSignIn, password.value)
+    const userCredential = await signInWithEmailAndPassword(auth, emailToSignIn, password.value)
+    const user = userCredential.user
+
+    const userDoc = await getDoc(doc(db, "users", user.uid))
     
-    // Xóa sạch rác cũ để tránh kẹt Token
+    if (userDoc.exists()) {
+      const userData = userDoc.data()
+      const isBoss = emailToSignIn === 'nguyenvanca14062001@gmail.com';
+      
+      // ĐÃ FIX: Cho phép tài khoản cũ không có nhãn được vào
+      if (!isBoss && userData.role !== 'admin' && userData.site && userData.site !== 'mmo') {
+        await signOut(auth) 
+        localStorage.clear()
+        throw new Error('Tài khoản này thuộc hệ thống khác. Vui lòng đăng nhập đúng địa chỉ!')
+      }
+    }
+
     localStorage.clear()
-    
     alert('Đăng nhập thành công! Bắt đầu kiếm tiền thôi nào.')
 
-    // 3. FIX QUAN TRỌNG: Đợi 500ms cho Firebase nạp quyền rồi mới nhảy trang
     setTimeout(() => {
       router.push('/')
     }, 500)
@@ -50,7 +59,7 @@ const handleLogin = async () => {
     if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
       alert('Tài khoản hoặc mật khẩu không chính xác!')
     } else {
-      alert('Lỗi: ' + error.message)
+      alert(error.message)
     }
   } finally {
     loading.value = false
@@ -59,9 +68,8 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white flex font-sans overflow-hidden">
+  <div class="min-h-screen bg-white flex font-sans overflow-y-auto lg:overflow-hidden pb-40 lg:pb-0">
     
-    <!-- BÊN TRÁI: THƯƠNG HIỆU MMO PRO -->
     <div class="hidden lg:flex lg:w-1/2 bg-[#f8fafc] flex-col items-center justify-center p-12 relative overflow-hidden">
       <div class="absolute -top-20 -right-20 w-96 h-96 bg-blue-100 rounded-full blur-[120px] opacity-60"></div>
       <div class="absolute -bottom-20 -left-20 w-96 h-96 bg-emerald-100 rounded-full blur-[120px] opacity-60"></div>
@@ -90,8 +98,9 @@ const handleLogin = async () => {
       </div>
     </div>
 
-    <!-- BÊN PHẢI: FORM ĐĂNG NHẬP -->
-    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white relative">
+      <button class="absolute top-6 left-6 lg:hidden z-50 text-2xl text-slate-800">☰</button>
+
       <div class="w-full max-w-md space-y-10">
         <div class="lg:hidden text-center mb-10">
             <h2 class="text-3xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">MMO <span class="text-blue-600">PRO</span></h2>
@@ -116,7 +125,6 @@ const handleLogin = async () => {
           <div class="space-y-2 text-left">
             <div class="flex justify-between items-center px-1">
               <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest italic">Mật khẩu</label>
-             
             </div>
             <div class="relative group">
               <span class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors text-lg">🔒</span>
@@ -134,7 +142,7 @@ const handleLogin = async () => {
           </button>
         </div>
 
-        <div class="pt-10 text-center">
+        <div class="pt-10 pb-10 text-center">
           <p class="text-[12px] font-black text-slate-400 uppercase italic tracking-[2px]">
             Chưa có tài khoản? 
             <span @click="router.push('/register')" class="text-blue-600 cursor-pointer hover:underline ml-2 text-sm">ĐĂNG KÝ TẠI ĐÂY</span>

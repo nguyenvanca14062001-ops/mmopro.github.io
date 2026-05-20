@@ -1,96 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { jobsData } from '@/data/jobs'
+import Swal from 'sweetalert2'
 
 const route = useRoute()
 const router = useRouter()
 const showGuide = ref(false)
-
-const jobsData: Record<string, any> = {
-  'app-chung-khoan': {
-    title: "MỞ APP CHỨNG KHOÁN",
-    reward: "200.000đ",
-    color: "text-blue-500",
-    steps: [
-      { 
-        id: 1, 
-        title: "BẤM VÀO LINK TẢI APP", 
-        content: "Chọn TẢI APP NGAY để tải APP chứng khoán về điện thoại.", 
-        downloadLink: "https://open.kafi.vn/x/sign-up?refCode=D0020029",
-        
-      },
-      { 
-        id: 2, 
-        title: "ĐĂNG KÝ VÀ NHẬP MÃ GIỚI THIỆU D0020029", 
-        content: "BẮT BUỘC NHẬP MÃ GIỚI THIỆU D0020029 VÀ CHỤP LẠI ẢNH GỬI VÀO BẰNG CHỨNG.", 
-        img: "/images/anh-kafi2.jpg",
-        note: "NHẬP MÃ: D0020029 (BẮT BUỘC)"
-      },
-      { 
-        id: 3, 
-        title: "ĐĂNG KÝ TÀI KHOẢN THÀNH CÔNG VÀ ĐĂNG NHẬP", 
-        content: "CHỤP LẠI ẢNH ĐĂNG NHẬP THÀNH CÔNG ĐỂ GỬI BẰNG CHỨNG.", 
-        img: "/images/anh-kafi3.jpg" 
-      },
-      { 
-        id: 4, 
-        title: "LƯU LẠI ẢNH NHẬP MÃ GIỚI THIỆU VÀ ĐĂNG NHẬP",
-        content: "GỬI 2 ẢNH ĐÓ VÀ CHỜ PHÊ DUYỆT HOA HỒNG.",
-         
-      }
-    ]
-  },
-  'google-map': {
-    title: "XÁC THỰC GOOGLE MAP",
-    reward: "15.000đ",
-    color: "text-emerald-500",
-    steps: [
-      { id: 1, title: "TÌM ĐỊA ĐIỂM VINCOM HÀ NỘI", content: "CHỌN 3 ĐỊA CHỈ NGẪU NHIÊN VINCOM HÀ NỘI .", img: "/images/anh-vincom1.jpg" },
-      { id: 2, title: "ĐÁNH GIÁ 5 SAO", content: "Viết bình luận tốt và đăng kèm ảnh chụp địa điểm.", img: "/images/anh-vincom2.jpg" }, // THÊM DẤU PHẨY Ở ĐÂY
-      { id: 3, title: "CHỤP LẠI ẢNH BẰNG CHỨNG ", content: "CHỤP LẠI 3 ẢNH ĐÁNH GIÁ 5 SAO LÀM ẢNH BẰNG CHỨNG.",} // SỬA LẠI ĐÚNG CÚ PHÁP
-    ]
-  },
-  'vpbank': {
-    title: "MỞ TÀI KHOẢN VPBANK",
-    reward: "100.000đ",
-    color: "text-emerald-600",
-    steps: [
-      { id: 1, title: "TẢI APP VPBANK NEO", content: "TẢI ỨNG DỤNG VÀ TIẾN HÀNH ĐĂNG KÝ TÀI KHOẢN .", img: "/images/anh-vpbank1.jpg" },
-      { 
-        id: 2, 
-        title: "ĐĂNG KÝ eKYC VÀ NHẬP MÃ GIỚI THIỆU : AT420584 ", 
-        content: "BẮT BUỘC NHẬP MÃ GIỚI THIỆU AT420584 VÀ CHỤP LẠI MÀN HÌNH .", 
-        img: "/images/anh-vpbank2.jpg",
-        note: "NHẬP MÃ: AT420584 (BẮT BUỘC)" 
-      },
-      { id: 3, title: "ĐĂNG NHẬP VÀ CHỤP ẢNH BẰNG CHỨNG ", content: "GỬI ẢNH BẰNG CHỨNG NHƯ HƯỚNG DẪN DƯỚI ĐÂY .", img: "/images/anh-vpbank3.jpg" },
-      { id: 4, title: "LƯU LẠI ẢNH NHẬP MÃ GIỚI THIỆU VÀ ẢNH ĐĂNG NHẬP ", content: "TIẾN HÀNH GỬI 2 ẢNH BẰNG CHỨNG CHỜ XÉT DUYỆT ."}
-    
-    ]
-  },
-  'tpbank': {
-    title: "MỞ TÀI KHOẢN TPBANK",
-    reward: "70.000đ",
-    color: "text-purple-600",
-    steps: [
-      { id: 1, title: "TẢI APP TPBANK", content: "Mở ứng dụng và bắt đầu đăng ký.", img: "/images/anh-tpbank1.jpg" },
-      { 
-        id: 2, 
-        title: "ĐĂNG KÝ NHẬP MÃ GIỚI THIỆU AT09", 
-        content: "BẮT BUỘC NHẬP MÃ GIỚI THIỆU AT09 CHỤP LẠI ẢNH BẰNG CHỨNG.", 
-        img: "/images/anh-tpbank2.jpg",
-        note: "NHẬP MÃ: AT09 (BẮT BUỘC)"
-      },
-      { 
-        id: 3, 
-        title: "ĐĂNG NHẬP VÀ CHỤP LẠI ẢNH BẰNG CHỨNG", 
-        content: "CHỤP LẠI ẢNH ĐĂNG NHẬP NHƯ DƯỚI ĐÂY.", 
-        img: "/images/anh-tpbank3.jpg" 
-      },
-      { id: 4, title: "LƯU LẠI ẢNH NHẬP MÃ GIỚI THIỆU VÀ ẢNH ĐĂNG NHẬP ", content: "TIẾN HÀNH GỬI 2 ẢNH BẰNG CHỨNG CHỜ XÉT DUYỆT ."}
-    ]
-  }
-}
+const baseUrl = import.meta.env.BASE_URL
 
 const currentJob = ref(jobsData[route.params.id as string] || jobsData['app-chung-khoan'])
 
@@ -98,101 +15,289 @@ onMounted(() => {
   const jobId = route.params.id as string
   if (jobId && jobsData[jobId]) {
     currentJob.value = jobsData[jobId]
+    // Kích hoạt bốt gác chặn ngay khi vừa vào trang
+    checkAgeLimitOnDetail(jobId);
   }
 })
+
+// ============================================================================
+// LÕI LỌC TUỔI CHẶN CỨNG - THIẾT KẾ MỚI: LIỀN MẠCH, NHẤN MẠNH, KÍCH THƯỚC CHUẨN
+// ============================================================================
+const checkAgeLimitOnDetail = (jobId: string) => {
+  const age18Jobs = ['msb-bank', 'vpbank', 'tpbank', 'app-chung-khoan', 'app-chung-khoan-2'];
+  const age20Jobs = ['app-chung-khoan-3'];
+
+  // Nếu là job thường (Tiktok, Youtube, Map...) -> Cho qua luôn không cần hiện popup
+  if (!age18Jobs.includes(jobId) && !age20Jobs.includes(jobId)) return;
+
+  const hasSeenPopup = localStorage.getItem(`seen_age_popup_${jobId}`);
+  
+  if (!hasSeenPopup) {
+    let ageLimit = age18Jobs.includes(jobId) ? '18' : '20';
+    let appType = jobId.includes('bank') ? 'Ngân Hàng' : 'Chứng Khoán';
+
+    Swal.fire({
+      title: '⚠️ THÔNG BÁO ĐỘ TUỔI ĐĂNG KÝ',
+      html: `<div class="text-center font-sans normal-case text-white text-[14px] md:text-[15px] leading-relaxed">
+              Chiến dịch <span class="text-yellow-300 font-black italic underline">${appType}</span> này yêu cầu bạn phải từ:
+              <div class="my-3">
+                <span class="inline-block bg-white text-[#ea580c] px-4 py-1.5 rounded-full font-sans font-black text-[18px] shadow-xl border-2 border-orange-200 whitespace-nowrap">
+                  🔞 ${ageLimit} TUỔI TRỞ LÊN
+                </span>
+              </div>
+              mới đủ điều kiện đăng ký mở tài khoản hệ thống.
+              <br/><br/>
+              <div class="bg-black/20 p-4 rounded-2xl border border-white/10 text-left">
+                <span class="text-yellow-300 font-black text-[11px] tracking-wider block mb-1 uppercase">💡 Mẹo nhận hoa hồng:</span>
+                Nếu chưa đủ tuổi, bạn có thể <span class="text-white font-black underline">nhờ người thân hoặc bạn bè đủ tuổi đăng ký hộ</span>, sau đó chụp lại bằng chứng nộp lên hệ thống để nhận tiền thưởng hoa hồng bình thường nhé!
+              </div>
+             </div>`,
+      icon: 'warning',
+      iconColor: '#ffffff', // Biến icon chấm than thành màu trắng cho sang
+      background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', // Nền gradient Cam Cháy siêu sáng và đẹp
+      color: '#ffffff',
+      confirmButtonText: 'ĐÃ HIỂU VÀ TIẾP TỤC 🚀',
+      confirmButtonColor: '#1e293b', // Nút màu đá Slate tối tương phản cực mạnh với nền cam
+      allowOutsideClick: false, 
+      allowEscapeKey: false,    
+      backdrop: 'rgba(9,14,23,0.85)', // Làm mờ nhẹ giao diện web phía sau nhìn rất thiện cảm
+      customClass: {
+        popup: 'rounded-[32px] border-2 border-orange-400/30 shadow-[0_20px_50px_rgba(234,88,12,0.3)] p-5 md:p-8',
+        title: 'text-xl md:text-2xl font-black tracking-tight text-white italic font-sans pt-2'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Ghi nhớ thiết bị và mở khóa cho khách làm bài tiếp
+        localStorage.setItem(`seen_age_popup_${jobId}`, 'true');
+      } else {
+        // Nếu lách bằng cách khác -> Trả về trang chủ ngay
+        router.push('/');
+      }
+    });
+  }
+}
+
+// ==========================================
+// TÍNH NĂNG PHÓNG TO ẢNH (ZOOM) CHO TRANG HƯỚNG DẪN
+// ==========================================
+const selectedImage = ref<string | null>(null)
+const openImage = (img: string) => { selectedImage.value = img }
+const closeImage = () => { selectedImage.value = null }
+
+// Hàm copy đa năng dùng chung
+const handleCopy = (text: string) => {
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    Swal.fire({
+      title: 'ĐÃ SAO CHÉP!',
+      text: 'Đã lưu nội dung vào khay nhớ tạm.',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end'
+    })
+  }).catch(() => {
+    const textArea = document.createElement("textarea")
+    textArea.value = text
+    document.body.appendChild(textArea)
+    textArea.select()
+    try {
+      document.execCommand('copy')
+      Swal.fire({
+        title: 'ĐÃ SAO CHÉP!',
+        icon: 'success',
+        timer: 1000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      })
+    } catch (err) {
+      alert('Lỗi sao chép, hãy copy thủ công nhé!')
+    }
+    document.body.removeChild(textArea)
+  })
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#090e17] text-slate-300 p-4 md:p-8 font-black italic uppercase text-left">
-    <!-- THANH ĐIỀU HƯỚNG -->
+  <div class="min-h-screen bg-[#090e17] text-slate-300 p-4 md:p-8 font-black italic uppercase text-left relative">
+    
+    <Transition name="fade">
+      <div class="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md cursor-zoom-out" v-if="selectedImage" @click="closeImage">
+        <button class="absolute top-6 right-6 md:top-10 md:right-10 w-12 h-12 bg-slate-800 border border-slate-700 hover:bg-red-600 rounded-full flex items-center justify-center text-white transition-colors z-[6010] shadow-2xl" @click.stop="closeImage">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <img class="max-w-full max-h-[90vh] rounded-2xl object-contain shadow-[0_0_50px_rgba(0,0,0,0.5)] relative z-[6005] cursor-default" :src="selectedImage" @click.stop />
+      </div>
+    </Transition>
+
     <div class="flex justify-between items-center mb-8 max-w-4xl mx-auto border-b border-slate-800 pb-4">
-      <button @click="router.back()" class="text-[10px] tracking-[3px] text-slate-500 hover:text-white transition-all flex items-center gap-1">
+      <button class="text-[10px] tracking-[3px] text-slate-500 hover:text-white transition-all flex items-center gap-1" @click="router.push('/')">
         <span class="text-base font-light not-italic font-sans">✕</span> QUAY LẠI
       </button>
       <span class="text-[10px] tracking-[4px] text-slate-600">HƯỚNG DẪN CHI TIẾT</span>
     </div>
 
     <div class="max-w-4xl mx-auto space-y-10">
-      <!-- HEADER -->
       <div class="text-center">
-        <h1 class="text-4xl md:text-5xl font-black text-white italic tracking-tighter leading-none mb-5 drop-shadow-lg">
+        <h1 class="text-4xl md:text-5xl font-black text-white italic tracking-tighter leading-none mb-5 drop-shadow-xl">
           {{ currentJob.title }}
         </h1>
-        <div class="bg-[#052e1f] border border-[#005c3c] rounded-full px-6 py-2.5 w-max mx-auto flex items-center gap-2">
+        <div class="bg-[#052e1f] border border-[#005c3c] rounded-full px-6 py-2.5 w-max mx-auto flex items-center gap-2 shadow-inner">
           <span class="text-[#f59e0b] text-xl">⚡</span>
           <span class="text-[#00df89] text-base md:text-lg font-black italic uppercase tracking-tighter">
             THƯỞNG: {{ currentJob.reward }}
           </span>
         </div>
+        
+        <div class="mt-6 max-w-xl mx-auto bg-[#1a0f14] border border-red-500/40 rounded-2xl p-4 shadow-[0_0_20px_rgba(239,68,68,0.15)] animate-in fade-in zoom-in duration-500" v-if="currentJob.warning">
+          <div class="flex items-start gap-3">
+            <span class="text-red-500 text-xl animate-pulse">⚠️</span>
+            <p class="text-red-500 text-[11px] md:text-xs font-black uppercase italic tracking-[1px] leading-relaxed text-left">
+              {{ currentJob.warning }}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <!-- HƯỚNG DẪN -->
       <div class="bg-[#111726] rounded-[45px] border border-slate-800/50 p-6 md:p-10 shadow-2xl relative">
         <div class="text-center space-y-5">
-          <button @click="showGuide = !showGuide" 
-            class="group relative w-full flex items-center gap-4 bg-[#0d121f] border-2 border-emerald-500/30 hover:border-emerald-500/60 p-5 rounded-3xl transition-all mt-4">
+          
+         <div class="mb-6 bg-gradient-to-r from-yellow-500/10 to-orange-500/5 border border-yellow-500/30 rounded-2xl p-4 md:p-5 flex items-start gap-3 md:gap-4 shadow-[0_0_20px_rgba(234,179,8,0.1)] relative overflow-hidden animate-in fade-in duration-700"
+               v-if="['msb-bank', 'vpbank', 'tpbank', 'app-chung-khoan', 'app-chung-khoan-2', 'app-chung-khoan-3'].includes(route.params.id as string)">
+            
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-yellow-400 to-orange-500 shadow-[0_0_10px_rgba(234,179,8,0.8)]"></div>
+
+            <div class="text-2xl md:text-3xl animate-bounce drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] mt-1">🪝</div>
+
+            <div class="text-left">
+              <h4 class="text-yellow-400 font-black italic uppercase text-[12px] md:text-sm tracking-widest mb-1.5 drop-shadow-md">
+                MẸO KIẾM TIỀN:
+              </h4>
+              <p class="text-slate-300 text-[11px] md:text-[13px] font-medium leading-relaxed normal-case">
+                Nếu bạn đã đăng ký APP này rồi, có thể <span class="text-yellow-400 font-black italic text-[12px] md:text-[14px]">giới thiệu bạn bè / người thân đăng ký</span> và chụp lại ảnh bằng chứng gửi lên hệ thống, bạn <span class="text-yellow-400 font-black italic text-[12px] md:text-[14px]">vẫn được nhận hoa hồng</span> bình thường nhé! 🚀
+              </p>
+            </div>
+          </div>
+          <button class="group relative w-full flex items-center gap-4 bg-[#0d121f] border-2 border-emerald-500/30 hover:border-emerald-500/60 p-5 rounded-3xl transition-all mt-4" @click="showGuide = !showGuide">
             <div class="text-4xl group-hover:scale-110 transition-transform">📖</div>
             <div class="text-left">
-              <h3 class="text-lg text-white font-black italic leading-none mb-1 uppercase">XEM HƯỚNG DẪN VÀ LÀM THEO 4 BƯỚC </h3>
+              <h3 class="text-lg text-white font-black italic leading-none mb-1 uppercase">XEM HƯỚNG DẪN VÀ LÀM THEO {{currentJob.steps?.length || 0}} BƯỚC </h3>
               <p class="text-[#00df89] text-[8px] tracking-[1px] font-black uppercase italic">NHẤN ĐỂ MỞ TỪNG BƯỚC LÀM</p>
             </div>
           </button>
         </div>
 
-       <div v-if="showGuide" 
-class="mt-8 pt-8 border-t border-slate-800/50 space-y-6 animate-in fade-in zoom-in-95 duration-300">
+        <div class="mt-8 pt-8 border-t border-slate-800/50 space-y-8 animate-in fade-in duration-500" v-if="showGuide">
+          <div class="relative pl-10" v-for="step in currentJob.steps" :key="step.id">
+            <div class="absolute left-4 top-0 bottom-0 w-[2px] bg-slate-700/30"></div>
+            
+            <div class="absolute left-0 top-1 w-8 h-8 rounded-full bg-[#00df89] text-[#090e17] flex items-center justify-center text-sm font-black shadow-lg shadow-emerald-500/20">
+              {{ step.id }}
+            </div>
 
-  <div v-for="step in currentJob.steps" :key="step.id" class="relative pl-10">
+            <div class="pb-8">
+              <h4 class="text-[#3b82f6] text-base md:text-lg italic font-black mb-2 uppercase tracking-tight">
+                {{ step.title }}
+              </h4>
+              <p class="text-slate-400 text-xs italic normal-case opacity-80 leading-relaxed mb-5">
+                {{ step.content }}
+              </p>
 
-    <!-- LINE DỌC -->
-    <div class="absolute left-4 top-0 bottom-0 w-[2px] bg-slate-700/50"></div>
+              <div class="mb-8 space-y-4" v-if="step.templates && step.templates.length > 0">
+                <div class="bg-[#0d121f] p-5 rounded-2xl border border-slate-700/80 relative group shadow-inner" v-for="(temp, idx) in step.templates" :key="idx">
+                  <p class="text-slate-300 text-[12px] normal-case italic opacity-90 whitespace-pre-wrap leading-relaxed pr-24 select-all">
+                    {{ temp }}
+                  </p>
+                  <button class="absolute top-1/2 -translate-y-1/2 right-4 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
+                    @click="handleCopy(temp)">
+                    📋 COPY
+                  </button>
+                </div>
+              </div>
 
-    <!-- CIRCLE STEP -->
-    <div class="absolute left-0 top-1 w-8 h-8 rounded-full bg-[#00df89] text-[#090e17] flex items-center justify-center text-sm font-black">
-      {{ step.id }}
-    </div>
+              <div class="mb-8 space-y-4 max-w-lg" v-if="step.copyContents">
+                <div class="bg-[#0d121f] border border-slate-700 rounded-2xl p-4 shadow-inner" v-for="(item, index) in step.copyContents" :key="index">
+                  <p class="text-[10px] text-emerald-400 font-black mb-2 tracking-[2px] uppercase italic border-b border-slate-800 pb-2">⭐ {{ item.label }}</p>
+                  <div class="text-slate-300 text-xs normal-case italic opacity-90 mb-4 whitespace-pre-wrap leading-relaxed select-all">
+                    {{ item.text }}
+                  </div>
+                  <button class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl text-[11px] font-black transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2" @click="handleCopy(item.text)">
+                    📋 SAO CHÉP {{ item.label }}
+                  </button>
+                </div>
+              </div>
 
-    <!-- CONTENT -->
-    <div class="pb-6">
-      <h4 class="text-[#3b82f6] text-base md:text-lg italic font-black mb-2 uppercase">
-        {{ step.title }}
-      </h4>
+              <div class="mb-6 max-w-md" v-if="step.referralLink">
+                <div class="bg-[#0d121f] border border-slate-700 p-2 rounded-xl flex items-center gap-2 shadow-xl">
+                  <input class="flex-1 bg-transparent border-none text-[10px] text-emerald-400 font-black italic px-2 outline-none overflow-hidden text-ellipsis whitespace-nowrap" readonly :value="step.referralLink" />
+                  <button class="bg-emerald-500 hover:bg-emerald-600 text-[#090e17] px-4 py-2 rounded-lg text-[10px] font-black transition-all active:scale-95" @click="handleCopy(step.referralLink)">
+                    SAO CHÉP LINK
+                  </button>
+                </div>
+              </div>
 
-      <p class="text-slate-400 text-xs italic normal-case opacity-80 leading-relaxed mb-4">
-        {{ step.content }}
-      </p>
+              <div class="mb-6 flex flex-wrap items-center gap-3" v-if="step.downloadLink">
+                <a class="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl text-[11px] font-black uppercase hover:shadow-lg hover:shadow-blue-500/30 transition-all active:scale-95" :href="step.downloadLink" target="_blank" :download="step.downloadLink.includes('.png') || step.downloadLink.includes('.jpg') ? 'Tai_Lieu_MMO_PRO' : false">
+                  {{ step.buttonText || 'TẢI APP NGAY ➔' }}
+                </a>
+                
+                <button class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 px-5 py-3 rounded-xl text-[11px] font-black uppercase transition-all shadow-md border border-slate-700 active:scale-95"
+                  v-if="!step.downloadLink.includes('.png') && !step.downloadLink.includes('.jpg')"
+                  @click="handleCopy(step.downloadLink)">
+                  📋 SAO CHÉP LINK
+                </button>
+              </div>
 
-      <!-- BUTTON -->
-      <div v-if="step.downloadLink" class="mb-6">
-        <a :href="step.downloadLink" target="_blank"
-          class="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl text-[11px] font-black uppercase">
-          TẢI APP NGAY
-        </a>
+              <div class="flex flex-col md:flex-row gap-6 items-start">
+                <div class="w-full md:max-w-[400px] rounded-2xl overflow-hidden border border-slate-700/50 shadow-2xl bg-slate-900 cursor-zoom-in group relative"
+                     v-if="step.img" 
+                     @click="openImage(baseUrl + step.img)">
+                  <img class="w-full h-auto object-contain hover:scale-105 transition-transform duration-500" :src="baseUrl + step.img" />
+                  <div class="absolute bottom-2 right-2 bg-black/70 backdrop-blur text-white text-[8px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">🔍 CHẠM ĐỂ PHÓNG TO</div>
+                </div>
+
+                <div class="bg-[#0d121f] border-l-4 border-blue-500 p-6 rounded-2xl flex-1 shadow-lg" v-if="step.note">
+                  <p class="text-blue-400 text-[10px] font-black tracking-[2px] mb-2 uppercase italic">Thông tin quan trọng</p>
+                  <h5 class="text-white text-lg md:text-xl font-black italic leading-tight uppercase">{{ step.note }}</h5>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2 md:gap-4 mt-4" v-if="step.images">
+                <div class="rounded-xl overflow-hidden border border-slate-700/50 shadow-lg relative group bg-slate-900 cursor-zoom-in"
+                     v-for="(imgSrc, idx) in step.images" :key="idx" 
+                     @click="openImage(baseUrl + imgSrc)">
+                  <img class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" :src="baseUrl + imgSrc" />
+                  <div class="absolute top-1.5 left-1.5 bg-blue-600/90 backdrop-blur-sm text-white text-[8px] md:text-[10px] font-black px-2 py-0.5 rounded shadow-sm">ẢNH {{ idx + 1 }}</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- IMAGE + NOTE -->
-      <div class="flex flex-col md:flex-row gap-4">
-        <div v-if="step.img" class="max-w-[260px] rounded-xl overflow-hidden border border-slate-700">
-          <img :src="step.img" class="w-full h-auto"/>
-        </div>
-
-        <div v-if="step.note" class="bg-[#0d121f] border border-blue-500/30 p-5 rounded-xl">
-          <p class="text-blue-400 text-[10px] mb-2">THÔNG TIN QUAN TRỌNG</p>
-          <h5 class="text-white text-lg font-black">{{ step.note }}</h5>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-</div>
-      <section class="bg-[#111726] rounded-[45px] border border-slate-800/50 p-8 md:p-10 text-center shadow-xl">
-        <h2 class="text-lg text-slate-400 font-black italic mb-6 tracking-wide uppercase">BẠN ĐÃ LÀM XONG?</h2>
-        <button @click="router.push('/submit-report')" 
-          class="w-full bg-[#00df89] hover:bg-[#00c578] text-[#090e17] py-5 rounded-2xl text-xl font-black italic uppercase shadow-[0_10px_30px_rgba(0,223,137,0.2)] transition-all active:scale-95">
+      <section class="bg-[#111726] rounded-[45px] border border-slate-800/50 p-8 md:p-10 text-center shadow-xl mb-20">
+        <h2 class="text-lg text-slate-400 font-black italic mb-6 tracking-wide uppercase opacity-60">BẠN ĐÃ LÀM XONG?</h2>
+        
+        <button class="w-full bg-[#00df89] hover:bg-[#00c578] text-[#090e17] py-5 rounded-2xl text-xl font-black italic uppercase shadow-[0_10px_40px_rgba(0,223,137,0.25)] transition-all active:scale-95" @click="router.push(`/submit-report?job=${route.params.id}`)">
           NỘP BẰNG CHỨNG NGAY
         </button>
       </section>
     </div>
   </div>
 </template>
+
+<style scoped>
+::-webkit-scrollbar { width: 0px; }
+.animate-in { animation-duration: 0.5s; }
+.zoom-in { animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>
