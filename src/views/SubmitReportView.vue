@@ -1,16 +1,3 @@
-Nhất trí luôn Boss ơi! Thêm ô nhập **Năm sinh** trực tiếp vào form nộp bằng chứng của khách (`SubmitReport.vue`) là cực kỳ chuẩn bài.
-
-Như vậy, khi tụi nhỏ đi mượn tài khoản của bố mẹ hay người thân đăng ký hộ, tụi nó sẽ chủ động tự gõ đúng năm sinh của người đăng ký vào đây. Admin nhìn một phát là khớp ngay với số tuổi đối soát, khỏi mất công đoán già đoán non!
-
-Mây đã chỉnh sửa lại đúng file **`SubmitReport.vue` (bản 450 dòng)**:
-
-1. **Thêm ô nhập Năm sinh:** Cho phép khách tự gõ số (ví dụ: `1998`, `2002`...) ngay phía dưới ô SĐT Đối soát.
-2. **Ép chặn cứng phải nhập:** Nếu bỏ trống năm sinh hoặc gõ tào lao không đủ 4 chữ số, hệ thống sẽ nảy cảnh báo bắt điền lại ngay lập tức.
-3. **Đẩy thẳng lên Firebase:** Dữ liệu năm sinh sẽ được tự động đồng bộ và lưu thẳng vào bản ghi đơn nộp (`reports`) trên Firestore dưới trường `birthYear`.
-
-Boss `Ctrl + A` chọn tất cả và dán đè bản **FULL CẬP NHẬT Ô NĂM SINH** này vào file `SubmitReport.vue` là chạy mượt mà, sẵn sàng thực chiến luôn nhé:
-
-```vue
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -53,16 +40,15 @@ const jobSamples: Record<string, string[]> = {
   'tpbank': ['images/anh-tpbank5.jpg', 'images/anh-tpbank2.jpg', 'images/anh-tpbank3.jpg', 'images/anh-tpbank6.jpg'],
   'vpbank': ['images/anh-vpbank2.jpg', 'images/anh-vpbank3.jpg', 'images/anh-vpbank6.jpg'],
   'msb-bank': ['images/anh-msb2.jpg', 'images/anh-msb3.jpg', 'images/anh-msb10.jpg'],
-  'app-chung-khoan': ['images/anh-kafi-b1.jpg', 'images/anh-kafi2.jpg', 'images/anh-kafi3.jpg'],
-  'app-chung-khoan-2': ['images/anh-dnse1.jpg', 'images/anh-dnse2.jpg', 'images/anh-dnse3.jpg'],
-  'app-chung-khoan-3': ['images/anh-kis4.jpg', 'images/anh-kis1.jpg', 'images/anh-kis2.jpg']
+  'app-chung-khoan': ['images/anh-kafi2.jpg', 'images/anh-kafi3.jpg', 'images/anh-kafi10.jpg'],
+  'app-chung-khoan-2': ['images/anh-dnse2.jpg', 'images/anh-dnse3.jpg', 'images/anh-dnse10.jpg'],
+  'app-chung-khoan-3': ['images/anh-kis1.jpg', 'images/anh-kis2.jpg', 'images/anh-kis10.jpg']
 };
 
 // FORM DATA
 const selectedJob = ref(jobOptions[0]) 
 const fullName = ref('') 
 const phoneNumber = ref('') 
-const birthYear = ref('') // Biến lưu trữ năm sinh do khách tự điền số
 const images = ref<string[]>([]) 
 const fileInput = ref<HTMLInputElement | null>(null)
 
@@ -97,7 +83,7 @@ watch(() => route.query.job, (newJobId) => {
 
 const isFanpageTask = computed(() => ['vpbank', 'tpbank', 'msb-bank', 'app-chung-khoan', 'app-chung-khoan-2', 'app-chung-khoan-3'].includes(selectedJob.value.id))
 
-// ĐỊNH NGHĨA LẠI CÁC NHÓM CHẶN ẢNH (CHỨNG KHOÁN 1 2 3 ĐÃ LÊN 3 ẢNH)
+// PHÂN CHIA ĐIỀU KIỆN CHẶN ẢNH THEO TỪNG NHÓM JOB (ĐÃ ĐƯỜNG BỘ CHỨNG KHOÁN LÊN 3 ẢNH)
 const fourImageJobs = ['tpbank'];
 const threeImageJobs = ['vpbank', 'msb-bank', 'app-chung-khoan', 'app-chung-khoan-2', 'app-chung-khoan-3'];
 
@@ -180,17 +166,9 @@ const removeImage = (index: number) => {
 
 // LOGIC GỬI ĐƠN
 const submitReport = async () => {
-  // BẮT BUỘC ĐIỀU KIỆN CƠ BẢN + CHECK THÊM Ô NĂM SINH KHÔNG ĐƯỢC ĐỂ TRỐNG
-  if (!fullName.value || !phoneNumber.value || !birthYear.value || images.value.length === 0) {
-    alert('⚠️ VUI LÒNG NHẬP ĐẦY ĐỦ THÔNG TIN, NĂM SINH VÀ TẢI ẢNH XÁC THỰC!')
+  if (!fullName.value || !phoneNumber.value || images.value.length === 0) {
+    alert('⚠️ VUI LÒNG NHẬP ĐỦ THÔNG TIN VÀ TẢI ẢNH XÁC THỰC!')
     return
-  }
-
-  // Kiểm tra xem khách có nhập đúng định dạng năm sinh 4 chữ số hay không (VD: 2000)
-  const cleanYear = birthYear.value.replace(/\D/g, '');
-  if (cleanYear.length !== 4 || Number(cleanYear) < 1940 || Number(cleanYear) > 2026) {
-    alert('⚠️ VUI LÒNG NHẬP ĐÚNG ĐỊNH DẠNG NĂM SINH CHUẨN (VÍ DỤ: 2002)!');
-    return;
   }
 
   // ÉP BUỘC ĐIỀU KIỆN CHẶN CỨNG 4 ẢNH CHO TPBANK
@@ -199,7 +177,7 @@ const submitReport = async () => {
     return;
   }
 
-  // ÉP BUỘC ĐIỀU KIỆN CHẶN CỨNG 3 ẢNH CHO VPBANK, MSB VÀ CẢ 3 APP CHỨNG KHOÁN
+  // ÉP BUỘC ĐIỀU KIỆN CHẶN CỨNG 3 ẢNH CHO CẢ CHỨNG KHOÁN VÀ VPBANK, MSB
   if (threeImageJobs.includes(selectedJob.value.id) && images.value.length < 3) {
     alert(`⚠️ CHIẾN DỊCH NÀY BẮT BUỘC PHẢI TẢI LÊN ÍT NHẤT 3 ẢNH MẪU ĐỂ ĐỐI SOÁT!`);
     return;
@@ -262,7 +240,6 @@ const submitReport = async () => {
       reward: selectedJob.value.reward, 
       fullName: fullName.value.toUpperCase(),
       phoneRef: phoneNumber.value,
-      birthYear: cleanYear, // Lưu thông tin năm sinh người đăng ký lên cơ sở dữ liệu Firestore
       images: images.value,
       status: 'pending',
       createdAt: serverTimestamp()
@@ -345,18 +322,6 @@ const openFanpage = () => {
           />
         </div>
 
-        <div class="space-y-2 text-left">
-          <label class="text-blue-400 text-[11px] tracking-widest ml-1 font-black">NĂM SINH NGƯỜI ĐĂNG KÝ</label>
-          <input 
-            v-model="birthYear" 
-            type="number" 
-            pattern="[0-9]*"
-            inputmode="numeric"
-            placeholder="Ví dụ: 2002 (Điền số năm sinh đối soát)..." 
-            class="w-full bg-[#0d121f] border border-slate-800 focus:border-blue-500 rounded-[20px] py-4 px-5 text-white outline-none placeholder:text-slate-500 placeholder:normal-case font-sans not-italic font-semibold text-[15px] shadow-inner transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
-        </div>
-
         <div class="space-y-2 text-left mt-2">
           <label class="text-blue-400 text-[11px] tracking-widest ml-1 font-black">HÌNH ẢNH XÁC THỰC VÀ ĐỐI CHIẾU MẪU</label>
           <div 
@@ -375,20 +340,24 @@ const openFanpage = () => {
           </div>
           <input type="file" ref="fileInput" @change="handleFileUpload" multiple accept="image/*" class="hidden" />
 
-          <div class="mt-4 p-4 bg-[#0d121f] border border-slate-800/80 rounded-2xl shadow-inner" v-if="jobSamples[selectedJob.id]">
+          <div v-if="jobSamples[selectedJob.id]" class="mt-4 p-4 bg-[#0d121f] border border-slate-800/80 rounded-2xl shadow-inner">
             <p class="text-[10px] md:text-[11px] text-yellow-400 font-black tracking-widest mb-3 uppercase italic leading-relaxed">
               ⚠️ Bạn phải gửi đủ {{ jobSamples[selectedJob.id].length }} ảnh mẫu này (Chạm để zoom to):
             </p>
             <div :class="['grid gap-2', jobSamples[selectedJob.id].length >= 4 ? 'grid-cols-4' : 'grid-cols-3']">
-              <div class="relative rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900 aspect-[3/4] cursor-zoom-in group hover:border-blue-500 transition-colors" v-for="(img, idx) in jobSamples[selectedJob.id]" :key="idx" @click="openImage(baseUrl + img)">
+              <div v-for="(img, idx) in jobSamples[selectedJob.id]" :key="idx" 
+                   @click="openImage(baseUrl + img)"
+                   class="relative rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900 aspect-[3/4] cursor-zoom-in group hover:border-blue-500 transition-colors">
                 <img class="w-full h-full object-cover group-hover:scale-105 transition-transform" :src="baseUrl + img" />
                 <div class="absolute bottom-1 left-1 bg-black/70 backdrop-blur-sm text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-sm">MẪU {{ idx + 1 }}</div>
               </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4" v-if="images.length > 0">
-            <div class="relative group rounded-[18px] overflow-hidden border border-slate-800 bg-[#0d121f] aspect-square cursor-zoom-in" v-for="(img, index) in images" :key="index" @click="openImage(img)">
+          <div v-if="images.length > 0" class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+            <div v-for="(img, index) in images" :key="index" 
+                 @click="openImage(img)"
+                 class="relative group rounded-[18px] overflow-hidden border border-slate-800 bg-[#0d121f] aspect-square cursor-zoom-in">
               <img class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity bg-white" :src="img" />
               <button class="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-[10px] font-sans not-italic z-10 shadow-lg" @click.stop="removeImage(index)">✕</button>
             </div>
@@ -460,5 +429,3 @@ select:disabled {
   background-image: none;
 }
 </style>
-
-```
