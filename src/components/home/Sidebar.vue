@@ -12,12 +12,13 @@ defineProps<{
 }>();
 
 const emit = defineEmits([
- 'toggleMenu', 
- 'logout', 
- 'routerPush', 
- 'requireAuth', 
- 'scrollToHistory', 
- 'contactSupport'
+ 'toggleMenu',
+ 'logout',
+ 'routerPush',
+ 'requireAuth',
+ 'scrollToHistory',
+ 'contactSupport',
+ 'receiveJob'
 ]);
 
 const handleHistoryClick = () => {
@@ -120,7 +121,7 @@ const navigateTo = (path: string, authRequired = false) => {
      <p class="text-slate-500 text-[9px] tracking-[3px] px-3 mb-1.5 mt-3 border-t border-slate-800/50 pt-3 opacity-60 italic">CÔNG VIỆC HOT MỖI NGÀY</p>
 
      <!-- NÚT JOB 1: TIKTOK (HIỂN THỊ CẢ PC LẪN MOBILE) -->
-     <button @click="navigateTo('/job/view-tiktok')" class="w-full relative flex items-center justify-between px-3 py-3 rounded-[18px] bg-gradient-to-r from-pink-600/20 to-rose-600/5 border-2 border-pink-500/50 hover:border-pink-400 shadow-[0_0_20px_rgba(236,72,153,0.15)] transition-all group mb-2">
+     <button @click="emit('receiveJob', 'view-tiktok')" class="w-full relative flex items-center justify-between px-3 py-3 rounded-[18px] bg-gradient-to-r from-pink-600/20 to-rose-600/5 border-2 border-pink-500/50 hover:border-pink-400 shadow-[0_0_20px_rgba(236,72,153,0.15)] transition-all group mb-2">
        <div class="flex items-center gap-3">
          <div class="w-8 h-8 rounded-xl bg-pink-500 flex items-center justify-center shadow-lg group-hover:rotate-12 shrink-0"><span class="text-white font-black text-[9px]">TT</span></div>
          <div class="text-left"><span class="text-pink-400 text-[11px] block leading-none mb-1">Cày View TikTok</span><span class="text-white/40 text-[12px] normal-case font-bold">Thưởng 30k xu</span></div>
@@ -134,7 +135,7 @@ const navigateTo = (path: string, authRequired = false) => {
      </button>
 
      <!-- NÚT JOB 2: YOUTUBE (HIỂN THỊ CẢ PC LẪN MOBILE) -->
-     <button @click="navigateTo('/job/view-youtube')" class="w-full relative flex items-center justify-between px-3 py-3 rounded-[18px] bg-gradient-to-r from-red-600/20 to-orange-600/5 border-2 border-red-500/50 hover:border-red-400 shadow-[0_0_20px_rgba(239,68,68,0.15)] transition-all group mb-4">
+     <button @click="emit('receiveJob', 'view-youtube')" class="w-full relative flex items-center justify-between px-3 py-3 rounded-[18px] bg-gradient-to-r from-red-600/20 to-orange-600/5 border-2 border-red-500/50 hover:border-red-400 shadow-[0_0_20px_rgba(239,68,68,0.15)] transition-all group mb-4">
        <div class="flex items-center gap-3">
          <div class="w-8 h-8 rounded-xl bg-red-600 flex items-center justify-center shadow-lg group-hover:rotate-12 shrink-0"><span class="text-white font-black text-[9px]">YT</span></div>
          <div class="text-left"><span class="text-red-400 text-[11px] block leading-none mb-1">Cày View YouTube</span><span class="text-white/40 text-[12px] normal-case font-bold">Thưởng 30k xu</span></div>
@@ -161,8 +162,8 @@ const navigateTo = (path: string, authRequired = false) => {
          { id: 'vpbank', name: 'APP VPBank', tag: 'VPB', color: 'text-orange-500', mobile: false }, 
          { id: 'tpbank', name: 'APP TPBank', tag: 'TPB', color: 'text-orange-500', mobile: false }
        ]" 
-               :key="job.id" 
-               @click="navigateTo('/job/' + job.id)" 
+               :key="job.id"
+               @click="emit('receiveJob', job.id)"
                :class="['w-full items-center justify-between px-3 py-2 rounded-[14px] hover:bg-[#151b2b] text-slate-400 hover:text-white transition-all group', job.mobile ? 'flex' : 'hidden lg:flex']">
          <div class="flex items-center gap-3">
            <div class="w-7 h-7 rounded-lg bg-[#0d121f] border border-slate-700/50 flex items-center justify-center shadow-md group-hover:scale-110 shrink-0">

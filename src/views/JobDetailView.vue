@@ -15,67 +15,8 @@ onMounted(() => {
   const jobId = route.params.id as string
   if (jobId && jobsData[jobId]) {
     currentJob.value = jobsData[jobId]
-    // Kích hoạt bốt gác chặn ngay khi vừa vào trang
-    checkAgeLimitOnDetail(jobId);
   }
 })
-
-// ============================================================================
-// LÕI LỌC TUỔI CHẶN CỨNG - THIẾT KẾ MỚI: LIỀN MẠCH, NHẤN MẠNH, KÍCH THƯỚC CHUẨN
-// ============================================================================
-const checkAgeLimitOnDetail = (jobId: string) => {
-  const age18Jobs = ['msb-bank', 'vpbank', 'tpbank', 'app-chung-khoan', 'app-chung-khoan-2'];
-  const age20Jobs = ['app-chung-khoan-3'];
-
-  // Nếu là job thường (Tiktok, Youtube, Map...) -> Cho qua luôn không cần hiện popup
-  if (!age18Jobs.includes(jobId) && !age20Jobs.includes(jobId)) return;
-
-  const hasSeenPopup = localStorage.getItem(`seen_age_popup_${jobId}`);
-  
-  if (!hasSeenPopup) {
-    let ageLimit = age18Jobs.includes(jobId) ? '18' : '20';
-    let appType = jobId.includes('bank') ? 'Ngân Hàng' : 'Chứng Khoán';
-
-    Swal.fire({
-      title: '⚠️ THÔNG BÁO ĐỘ TUỔI ĐĂNG KÝ',
-      html: `<div class="text-center font-sans normal-case text-white text-[14px] md:text-[15px] leading-relaxed">
-              Chiến dịch <span class="text-yellow-300 font-black italic underline">${appType}</span> này yêu cầu bạn phải từ:
-              <div class="my-3">
-                <span class="inline-block bg-white text-[#ea580c] px-4 py-1.5 rounded-full font-sans font-black text-[18px] shadow-xl border-2 border-orange-200 whitespace-nowrap">
-                  🔞 ${ageLimit} TUỔI TRỞ LÊN
-                </span>
-              </div>
-              mới đủ điều kiện đăng ký mở tài khoản hệ thống.
-              <br/><br/>
-              <div class="bg-black/20 p-4 rounded-2xl border border-white/10 text-left">
-                <span class="text-yellow-300 font-black text-[11px] tracking-wider block mb-1 uppercase">💡 Mẹo nhận hoa hồng:</span>
-                Nếu chưa đủ tuổi, bạn có thể <span class="text-white font-black underline">nhờ người thân hoặc bạn bè đủ tuổi đăng ký hộ</span>, sau đó chụp lại bằng chứng nộp lên hệ thống để nhận tiền thưởng hoa hồng bình thường nhé!
-              </div>
-             </div>`,
-      icon: 'warning',
-      iconColor: '#ffffff', // Biến icon chấm than thành màu trắng cho sang
-      background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', // Nền gradient Cam Cháy siêu sáng và đẹp
-      color: '#ffffff',
-      confirmButtonText: 'ĐÃ HIỂU VÀ TIẾP TỤC 🚀',
-      confirmButtonColor: '#1e293b', // Nút màu đá Slate tối tương phản cực mạnh với nền cam
-      allowOutsideClick: false, 
-      allowEscapeKey: false,    
-      backdrop: 'rgba(9,14,23,0.85)', // Làm mờ nhẹ giao diện web phía sau nhìn rất thiện cảm
-      customClass: {
-        popup: 'rounded-[32px] border-2 border-orange-400/30 shadow-[0_20px_50px_rgba(234,88,12,0.3)] p-5 md:p-8',
-        title: 'text-xl md:text-2xl font-black tracking-tight text-white italic font-sans pt-2'
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Ghi nhớ thiết bị và mở khóa cho khách làm bài tiếp
-        localStorage.setItem(`seen_age_popup_${jobId}`, 'true');
-      } else {
-        // Nếu lách bằng cách khác -> Trả về trang chủ ngay
-        router.push('/');
-      }
-    });
-  }
-}
 
 // ==========================================
 // TÍNH NĂNG PHÓNG TO ẢNH (ZOOM) CHO TRANG HƯỚNG DẪN
