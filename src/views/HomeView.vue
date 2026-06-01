@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, inject, watch } from 'vue'
+import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth, db } from '@/firebase' 
-import { onAuthStateChanged, signOut } from "firebase/auth" 
-import { doc, onSnapshot, collection, query, where, updateDoc } from "firebase/firestore"
+import { signOut } from "firebase/auth"
+import { doc, updateDoc } from "firebase/firestore"
 import Swal from 'sweetalert2'
 
 import Sidebar from '@/components/home/Sidebar.vue'
@@ -17,15 +18,50 @@ const isMenuOpen = ref(false)
 const showBankModal = ref(false)
 const isDataLoading = ref(true)
 
-const username = ref(localStorage.getItem('mmo_username') || 'Member')
-const userBalance = ref(Number(localStorage.getItem('mmo_balance')) || 0)
-const totalWithdrawn = ref(0) 
+const injectedUserData = inject<Ref<any>>('userData', ref(null))
+const myReports = inject<Ref<any[]>>('myReports', ref([]))
+const myWithdrawals = inject<Ref<any[]>>('myWithdrawals', ref([]))
+const isDataLoading = inject<Ref<boolean>>('isDataLoading', ref(true))
 
-const myReports = ref<any[]>([])
-const myWithdrawals = ref<any[]>([])
+const username = computed(() => injectedUserData.value?.username || injectedUserData.value?.fullName || 'Member')
+const userBalance = computed(() => injectedUserData.value?.balance || 0)
+const totalWithdrawn = computed(() => injectedUserData.value?.totalWithdrawn || 0)
+const isLoggedIn = computed(() => !!injectedUserData.value)
 
-// Khóa chống spam hỏi tuổi ban đầu
-let hasAskedAge = false;
+let hasAskedAge = false
+watch(injectedUserData, async (data) => {
+  if (data && data.age === undefined && !hasAskedAge) {
+    hasAskedAge = true
+    setTimeout(async () => {
+      if (Swal.isVisible()) Swal.close()
+      const { value: ageInput } = await Swal.fire({
+        title: '🎂 BẠN BAO NHIÊU TUỔI?',
+        text: 'Hệ thống cần biết độ tuổi thật của bạn để đề xuất App Ngân hàng và Nhiệm vụ phù hợp nhất!',
+        input: 'number',
+        inputPlaceholder: 'Nhập số tuổi của bạn...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        background: '#111726',
+        color: '#fff',
+        confirmButtonColor: '#3b82f6',
+        confirmButtonText: 'XÁC NHẬN NGAY 🚀',
+        preConfirm: (val) => {
+          if (!val || val < 10 || val > 100) {
+            Swal.showValidationMessage('Vui lòng nhập độ tuổi thật hợp lệ!')
+            return false
+          }
+          return val
+        }
+      })
+      if (ageInput) {
+        try {
+          await updateDoc(doc(db, "users", auth.currentUser!.uid), { age: Number(ageInput) })
+          Swal.fire({ title: 'Tuyệt vời!', text: 'Hồ sơ đã cập nhật. Bắt đầu kiếm xu thôi!', icon: 'success', background: '#111726', color: '#fff' })
+        } catch (e) { alert("Lỗi: " + e) }
+      }
+    }, 3000)
+  }
+})
 
 const formatAmount = (val: any) => {
   if (!val) return '0';
@@ -55,84 +91,6 @@ const combinedHistory = computed(() => {
   }).sort((a, b) => b.sortTime - a.sortTime)
 })
 
-onMounted(() => {
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      isLoggedIn.value = true
-      
-      onSnapshot(doc(db, "users", user.uid), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          username.value = data.username || data.fullName || 'Member'
-          userBalance.value = data.balance || 0
-          totalWithdrawn.value = data.totalWithdrawn || 0 
-          localStorage.setItem('mmo_username', username.value)
-          localStorage.setItem('mmo_balance', String(userBalance.value))
-
-          // =============================================================
-          // LÕI HỎI TUỔI BAN ĐẦU KHI MỚI ĐĂNG KÝ (GIỮ NGUYÊN CỦA BOSS)
-          // =============================================================
-          if (data.age === undefined && !hasAskedAge) {
-            hasAskedAge = true;
-
-            setTimeout(async () => {
-              if (Swal.isVisible()) {
-                Swal.close(); 
-              }
-
-              const { value: ageInput } = await Swal.fire({
-                title: '🎂 BẠN BAO NHIÊU TUỔI?',
-                text: 'Hệ thống cần biết độ tuổi thật của bạn để đề xuất App Ngân hàng và Nhiệm vụ phù hợp nhất!',
-                input: 'number',
-                inputPlaceholder: 'Nhập số tuổi của bạn...',
-                allowOutsideClick: false,
-                allowEscapeKey: false,    
-                background: '#111726',
-                color: '#fff',
-                confirmButtonColor: '#3b82f6',
-                confirmButtonText: 'XÁC NHẬN NGAY 🚀',
-                preConfirm: (val) => {
-                  if (!val || val < 10 || val > 100) {
-                    Swal.showValidationMessage('Vui lòng nhập độ tuổi thật hợp lệ!');
-                    return false;
-                  }
-                  return val;
-                }
-              });
-
-              if (ageInput) {
-                try {
-                  await updateDoc(doc(db, "users", user.uid), { age: Number(ageInput) });
-                  Swal.fire({
-                    title: 'Tuyệt vời!',
-                    text: 'Hồ sơ đã cập nhật. Bắt đầu kiếm xu thôi!',
-                    icon: 'success',
-                    background: '#111726',
-                    color: '#fff'
-                  });
-                } catch (e) {
-                  alert("Lỗi: " + e);
-                }
-              }
-            }, 3000);
-          }
-        }
-      })
-      
-      onSnapshot(query(collection(db, "reports"), where("uid", "==", user.uid)), (snapshot) => {
-        myReports.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        isDataLoading.value = false
-      })
-      
-      onSnapshot(query(collection(db, "withdrawals"), where("uid", "==", user.uid)), (snapshot) => {
-        myWithdrawals.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      })
-    } else {
-      isLoggedIn.value = false; isDataLoading.value = false; username.value = 'Member'; userBalance.value = 0; 
-      myReports.value = []; myWithdrawals.value = []; localStorage.clear();
-    }
-  })
-})
 
 const handleNav = (path: string) => {
   router.push(path);

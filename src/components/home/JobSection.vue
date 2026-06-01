@@ -1,36 +1,49 @@
-Mây đã gỡ được nút thắt rồi Boss ơi! Đúng như Mây dự đoán, trong file `JobSection.vue` cũ của Boss, cái nút **BẮT ĐẦU ⚡** ở dòng 107 đang bị **thiếu mất sự kiện `@click**`. Thảo nào lúc khách bấm vào các App Chứng Khoán ngoài trang chủ, hệ thống cứ trơ ra không truyền được ID về trang chủ để kích hoạt popup check tuổi.
-
-Mây đã vá lại chuẩn đét, bổ sung sự kiện `@click="handleJobClick(id as string)"` vào thẻ button để kích hoạt toàn bộ hệ thống lọc tuổi một lần duy nhất mà Boss vừa làm ở `Home.vue`.
-
-Boss `Ctrl + A` chọn toàn bộ dữ liệu full sườn của file **`JobSection.vue`** và chép đè bản chuẩn này vào là popup nảy lên tanh tách ngay lập tức:
-
-```vue
 <script setup lang="ts">
-import { jobsData } from '@/data/jobs'; 
+import { ref } from 'vue';
+import { jobsData } from '@/data/jobs';
 
-defineProps<{ 
-  username: string; 
-  isLoggedIn: boolean; 
+defineProps<{
+  username: string;
+  isLoggedIn: boolean;
   userBalance: number;
-  totalWithdrawn?: number 
+  totalWithdrawn?: number
 }>();
 
 const emit = defineEmits(['receiveJob', 'contactSupport', 'routerPush']);
 
+const showAgeModal = ref(false);
+const pendingJobId = ref('');
+const pendingJobTitle = ref('');
+const pendingJobAge = ref(18);
+
 const handleJobClick = (id: string) => {
+  const job = jobsData[id];
+  if (!job || (job as any).paused) return;
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
     navigator.vibrate(50);
   }
-  emit('receiveJob', id);
-}
-
-// HÀM LỌC SỐ ĐỂ HIỂN THỊ CHUẨN TRONG THẺ CÔNG VIỆC
-const formatReward = (val: any) => {
-  if (!val) return '0';
-  return String(val).replace(/\D/g, ''); 
+  pendingJobId.value = id;
+  pendingJobTitle.value = job.title;
+  pendingJobAge.value = id === 'app-chung-khoan-3' ? 20 : 18;
+  showAgeModal.value = true;
 };
 
-// BƯỚC 4: Đã cập nhật bgIcon thành đồng xu & Unit sang XU
+const confirmAge = () => {
+  showAgeModal.value = false;
+  emit('receiveJob', pendingJobId.value);
+};
+
+const cancelAge = () => {
+  showAgeModal.value = false;
+  pendingJobId.value = '';
+  pendingJobTitle.value = '';
+};
+
+const formatReward = (val: any) => {
+  if (!val) return '0';
+  return String(val).replace(/\D/g, '');
+};
+
 const userStats = [
   { label: 'SỐ DƯ KHẢ DỤNG', key: 'balance', unit: 'XU', color: 'text-blue-500', icon: '💰', bgIcon: '🪙' },
   { label: 'TỔNG ĐÃ RÚT', key: 'withdrawn', unit: 'XU', color: 'text-rose-400/90', icon: '💸', bgIcon: '🏦' },
@@ -39,8 +52,7 @@ const userStats = [
 ];
 
 const getJobIcon = (id: string) => {
-  // Config icon cho tất cả các job mới
-  const config: Record<string, { t: string, c: string }> = { 
+  const config: Record<string, { t: string, c: string }> = {
     'view-tiktok': { t: 'TT', c: 'text-white' },
     'view-youtube': { t: 'YT', c: 'text-white' },
     'post-threads': { t: '@', c: 'text-white' },
@@ -59,21 +71,21 @@ const getJobIcon = (id: string) => {
 };
 
 const getShortDesc = (id: string) => {
-    const desc: Record<string, string> = {
-        'view-tiktok': 'Xem video, thả tim, bình luận',
-        'view-youtube': 'Xem video 3p, like & subscribe',
-        'post-threads': 'Đăng tải nội dung kéo tương tác',
-        'seeding-vinfast': 'Bình luận tích cực, lan tỏa thông điệp',
-        'google-map': 'Đánh giá địa điểm nhận thưởng', 
-        'join-zalo': 'Vào nhóm cộng đồng nhận thông báo',
-        'app-chung-khoan': 'Đăng ký tài khoản Kafi X',
-        'app-chung-khoan-2': 'Đăng ký tài khoản DNSE',
-        'app-chung-khoan-3': 'Đăng ký tài khoản KIS',
-        'vpbank': 'Mở tài khoản số đẹp VPBank', 
-        'tpbank': 'Mở tài khoản TPBank Mobile', 
-        'msb-bank': 'Nhận quà tặng khi mở thẻ MSB'
-    };
-    return desc[id] || 'Làm nhiệm vụ ngay';
+  const desc: Record<string, string> = {
+    'view-tiktok': 'Xem video, thả tim, bình luận',
+    'view-youtube': 'Xem video 3p, like & subscribe',
+    'post-threads': 'Đăng tải nội dung kéo tương tác',
+    'seeding-vinfast': 'Bình luận tích cực, lan tỏa thông điệp',
+    'google-map': 'Đánh giá địa điểm nhận thưởng',
+    'join-zalo': 'Vào nhóm cộng đồng nhận thông báo',
+    'app-chung-khoan': 'Đăng ký tài khoản Kafi X',
+    'app-chung-khoan-2': 'Đăng ký tài khoản DNSE',
+    'app-chung-khoan-3': 'Đăng ký tài khoản KIS',
+    'vpbank': 'Mở tài khoản số đẹp VPBank',
+    'tpbank': 'Mở tài khoản TPBank Mobile',
+    'msb-bank': 'Nhận quà tặng khi mở thẻ MSB'
+  };
+  return desc[id] || 'Làm nhiệm vụ ngay';
 }
 </script>
 
@@ -88,24 +100,24 @@ const getShortDesc = (id: string) => {
         </linearGradient>
       </defs>
     </svg>
-    
+
     <div class="flex flex-col lg:flex-row gap-3">
       <section class="lg:w-2/3 relative bg-gradient-to-br from-[#111726] to-[#0d121f] rounded-[30px] border border-slate-800/60 p-6 md:p-10 overflow-hidden flex items-center min-h-[200px] md:min-h-[400px] shadow-2xl">
-        
+
         <div class="absolute -right-20 -top-20 w-[300px] h-[300px] bg-blue-600/15 rounded-full blur-[90px]"></div>
-        
+
         <div class="relative z-10 space-y-4 w-full md:w-[65%]">
           <div class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 text-[9px] md:text-[10px] px-3 py-1 rounded-full border border-emerald-500/20 font-bold uppercase tracking-wider">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE
           </div>
-          
+
           <h1 class="text-2xl md:text-5xl text-white leading-tight tracking-tighter uppercase font-black italic">
             CHÀO MỪNG,<br/>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 text-3xl md:text-6xl">
               {{ username.toUpperCase() }}
             </span>
           </h1>
-          
+
           <div class="border-l-4 border-blue-600 pl-4 max-w-2xl space-y-2">
             <p class="text-slate-300 text-[12px] md:text-[15px] font-medium leading-relaxed">
               Nền tảng kiếm tiền Online minh bạch. Rút xu nhanh gọn 24/7 về mọi ngân hàng.
@@ -114,7 +126,7 @@ const getShortDesc = (id: string) => {
               ⚠️ CẢNH BÁO: Nghiêm cấm gian lận hoặc gửi bằng chứng giả. Khóa vĩnh viễn nếu vi phạm.
             </p>
           </div>
-          
+
           <div class="pt-3 flex flex-wrap gap-2 md:gap-3">
             <button v-if="!isLoggedIn" @click="emit('routerPush', '/login')" class="bg-blue-600 hover:bg-blue-500 text-white w-full md:w-auto px-8 py-3.5 rounded-xl text-[10px] md:text-[12px] shadow-xl shadow-blue-900/40 uppercase font-black italic transition-all active:scale-95">
               ĐĂNG KÝ / ĐĂNG NHẬP NGAY
@@ -141,27 +153,27 @@ const getShortDesc = (id: string) => {
       </section>
 
       <div class="lg:w-1/3 grid grid-cols-2 gap-3">
-        <div v-for="stat in userStats" :key="stat.label" 
+        <div v-for="stat in userStats" :key="stat.label"
              class="bg-gradient-to-b from-[#1a2333]/80 to-[#111726]/90 border border-slate-800/60 border-t-slate-700/80 rounded-[25px] p-4 md:p-5 flex flex-col justify-between min-h-[110px] md:min-h-[180px] relative overflow-hidden shadow-2xl group">
-          
+
           <div class="absolute -right-4 -bottom-4 md:-right-6 md:-bottom-6 text-6xl md:text-8xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500 pointer-events-none grayscale">
             {{ stat.bgIcon }}
           </div>
 
           <p class="text-slate-500 text-[8px] md:text-[10px] tracking-[1px] font-bold uppercase relative z-10">{{ stat.label }}</p>
-          
+
           <div class="relative z-10 mt-auto">
             <p class="font-black italic tracking-tighter flex items-baseline gap-1" :class="stat.color">
-                <span class="text-xl md:text-4xl leading-none">
-                  {{ stat.key === 'balance' ? userBalance.toLocaleString() : (stat.key === 'rank' ? stat.value : (totalWithdrawn || 0).toLocaleString()) }}
-                </span>
-                <div v-if="stat.key !== 'rank'" class="flex flex-col items-center translate-y-[-2px]">
-                   <svg class="w-4 h-4 md:w-5 md:h-5 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" fill="url(#goldCoinGradient)" />
-                      <path d="M12 7v10M9 10h6M9 14h6" stroke="#854d0e" stroke-width="2" stroke-linecap="round" />
-                   </svg>
-                   <span class="text-[7px] md:text-[9px] text-yellow-500 font-black not-italic tracking-tighter uppercase">Xu</span>
-                </div>
+              <span class="text-xl md:text-4xl leading-none">
+                {{ stat.key === 'balance' ? userBalance.toLocaleString() : (stat.key === 'rank' ? stat.value : (totalWithdrawn || 0).toLocaleString()) }}
+              </span>
+              <div v-if="stat.key !== 'rank'" class="flex flex-col items-center translate-y-[-2px]">
+                <svg class="w-4 h-4 md:w-5 md:h-5 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" fill="url(#goldCoinGradient)" />
+                  <path d="M12 7v10M9 10h6M9 14h6" stroke="#854d0e" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <span class="text-[7px] md:text-[9px] text-yellow-500 font-black not-italic tracking-tighter uppercase">Xu</span>
+              </div>
             </p>
           </div>
         </div>
@@ -173,26 +185,26 @@ const getShortDesc = (id: string) => {
         <div class="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.6)]"></div>
         <h3 class="text-lg md:text-3xl text-white tracking-tighter italic font-black uppercase">CÔNG VIỆC <span class="text-emerald-500">HOT</span></h3>
       </div>
-      
+
       <div class="bg-[#111726]/40 border border-slate-800/50 rounded-[30px] p-3 md:p-8 shadow-inner">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          <div v-for="(j, id, index) in jobsData" :key="id" @click="handleJobClick(id as string)" 
+          <div v-for="(j, id, index) in jobsData" :key="id" @click="handleJobClick(id as string)"
             class="relative p-5 md:p-7 rounded-[28px] border-[2px] transition-all duration-500 flex flex-col group cursor-pointer active:scale-95 shadow-2xl overflow-hidden"
             :class="[
               id === 'view-tiktok'
-                ? 'bg-gradient-to-br from-[#3B1731] to-[#1F0A1A] border-pink-500/80 shadow-[0_0_20px_rgba(236,72,153,0.3)] inset-shadow-[0_0_15px_rgba(236,72,153,0.2)]' 
+                ? 'bg-gradient-to-br from-[#3B1731] to-[#1F0A1A] border-pink-500/80 shadow-[0_0_20px_rgba(236,72,153,0.3)]'
                 : id === 'view-youtube'
-                ? 'bg-gradient-to-br from-[#4A1612] to-[#260505] border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.3)] inset-shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                ? 'bg-gradient-to-br from-[#4A1612] to-[#260505] border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.3)]'
                 : id === 'post-threads'
-                ? 'bg-gradient-to-br from-[#2D3748] to-[#0F172A] border-slate-300/80 shadow-[0_0_20px_rgba(255,255,255,0.1)] inset-shadow-[0_0_15px_rgba(255,255,255,0.05)]'
+                ? 'bg-gradient-to-br from-[#2D3748] to-[#0F172A] border-slate-300/80 shadow-[0_0_20px_rgba(255,255,255,0.1)]'
                 : id === 'seeding-vinfast'
-                ? 'bg-gradient-to-br from-[#083344] to-[#082F49] border-cyan-500/80 shadow-[0_0_20px_rgba(6,182,212,0.3)] inset-shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                ? 'bg-gradient-to-br from-[#083344] to-[#082F49] border-cyan-500/80 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
                 : id === 'google-map'
-                ? 'bg-gradient-to-br from-[#3B1731] to-[#240A1A] border-fuchsia-500/80 shadow-[0_0_20px_rgba(217,70,239,0.3)] inset-shadow-[0_0_15px_rgba(217,70,239,0.2)]'
+                ? 'bg-gradient-to-br from-[#3B1731] to-[#240A1A] border-fuchsia-500/80 shadow-[0_0_20px_rgba(217,70,239,0.3)]'
                 : id === 'join-zalo'
-                ? 'bg-gradient-to-br from-[#182040] to-[#0C1226] border-indigo-500/80 shadow-[0_0_20px_rgba(99,102,241,0.3)] inset-shadow-[0_0_15px_rgba(99,102,241,0.2)]'
+                ? 'bg-gradient-to-br from-[#182040] to-[#0C1226] border-indigo-500/80 shadow-[0_0_20px_rgba(99,102,241,0.3)]'
                 : ['app-chung-khoan', 'app-chung-khoan-2', 'app-chung-khoan-3', 'msb-bank', 'vpbank', 'tpbank'].includes(id as string)
-                ? 'bg-gradient-to-br from-[#4A1612] to-[#260505] border-red-500/90 shadow-[0_0_30px_rgba(239,68,68,0.5)] inset-shadow-[0_0_20px_rgba(249,115,22,0.3)]'
+                ? 'bg-gradient-to-br from-[#4A1612] to-[#260505] border-red-500/90 shadow-[0_0_30px_rgba(239,68,68,0.5)]'
                 : 'bg-[#0d121f] border-slate-800'
             ]"
           >
@@ -200,13 +212,13 @@ const getShortDesc = (id: string) => {
 
             <div class="absolute -top-0 -right-0 z-20 flex items-center gap-1 text-[9px] md:text-[10px] tracking-widest px-3 py-1.5 rounded-bl-2xl rounded-tr-[26px] font-black italic uppercase border-b border-l border-white/20 shadow-lg"
                  :class="[
-                    ['app-chung-khoan', 'app-chung-khoan-2', 'app-chung-khoan-3', 'msb-bank', 'vpbank', 'tpbank'].includes(id as string) ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' : 
+                    ['app-chung-khoan', 'app-chung-khoan-2', 'app-chung-khoan-3', 'msb-bank', 'vpbank', 'tpbank'].includes(id as string) ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' :
                     id === 'view-tiktok' ? 'bg-pink-600 text-white' :
                     id === 'view-youtube' ? 'bg-red-600 text-white' :
                     id === 'post-threads' ? 'bg-slate-400 text-slate-900' :
                     id === 'seeding-vinfast' ? 'bg-cyan-600 text-white' :
                     id === 'google-map' ? 'bg-fuchsia-600 text-white' :
-                    'bg-indigo-600 text-white' 
+                    'bg-indigo-600 text-white'
                  ]">
               {{ ['app-chung-khoan', 'app-chung-khoan-2', 'app-chung-khoan-3', 'msb-bank', 'vpbank', 'tpbank'].includes(id as string) ? 'SIÊU HOT 🚀' : (j.badge || 'CƠ BẢN') }}
             </div>
@@ -214,7 +226,7 @@ const getShortDesc = (id: string) => {
             <div class="flex justify-between items-start mb-4 relative z-10">
               <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center shadow-lg border-[1.5px] border-white/20 transition-transform group-hover:scale-110"
                    :class="[
-                      id === 'view-tiktok' ? 'bg-pink-500/20 text-pink-400' : 
+                      id === 'view-tiktok' ? 'bg-pink-500/20 text-pink-400' :
                       id === 'view-youtube' ? 'bg-red-500/20 text-red-400' :
                       id === 'post-threads' ? 'bg-slate-300/20 text-slate-300' :
                       id === 'seeding-vinfast' ? 'bg-cyan-500/20 text-cyan-400' :
@@ -225,21 +237,21 @@ const getShortDesc = (id: string) => {
                    ]">
                 <span class="font-black text-sm md:text-xl italic">{{ getJobIcon(id as string).content }}</span>
               </div>
-              
+
               <span class="text-4xl md:text-6xl font-black opacity-[0.08] group-hover:opacity-[0.15] transition-opacity text-white">
                 {{ (index + 1).toString().padStart(2, '0') }}
               </span>
             </div>
-            
+
             <h4 class="text-[13px] md:text-lg text-white font-black italic uppercase leading-tight mb-1"
                 :class="{'text-pink-400': id === 'view-tiktok', 'text-red-400': id === 'view-youtube', 'text-slate-300': id === 'post-threads', 'text-cyan-400': id === 'seeding-vinfast', 'text-fuchsia-400': id === 'google-map', 'text-indigo-400': id === 'join-zalo' }">
               {{ j.title }}
             </h4>
-            
+
             <p class="text-[10px] md:text-[13px] text-slate-300 font-medium line-clamp-2 leading-relaxed mb-4 mt-1">
-               {{ getShortDesc(id as string) }}
+              {{ getShortDesc(id as string) }}
             </p>
-            
+
             <div class="flex flex-col mt-auto relative z-10">
               <p class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Thưởng ngay:</p>
               <div class="flex items-center gap-1.5">
@@ -247,18 +259,18 @@ const getShortDesc = (id: string) => {
                   {{ formatReward(j.reward).toLocaleString() }}
                 </p>
                 <div class="flex flex-col items-start translate-y-[-2px]">
-                   <svg class="w-4 h-4 md:w-5 md:h-5 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" fill="url(#goldCoinGradient)" />
-                      <path d="M12 7v10M9 10h6M9 14h6" stroke="#854d0e" stroke-width="2" stroke-linecap="round" />
-                   </svg>
-                   <span class="text-[7px] md:text-[9px] text-yellow-500 font-black not-italic tracking-tighter leading-none uppercase">Xu</span>
+                  <svg class="w-4 h-4 md:w-5 md:h-5 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" fill="url(#goldCoinGradient)" />
+                    <path d="M12 7v10M9 10h6M9 14h6" stroke="#854d0e" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                  <span class="text-[7px] md:text-[9px] text-yellow-500 font-black not-italic tracking-tighter leading-none uppercase">Xu</span>
                 </div>
               </div>
             </div>
-            
+
             <button @click.stop="handleJobClick(id as string)" class="w-full mt-4 py-3 md:py-4 rounded-xl text-[10px] md:text-[11px] font-black italic uppercase transition-all shadow-lg relative z-10 border-t border-white/20"
               :class="[
-                id === 'view-tiktok' ? 'bg-gradient-to-r from-pink-600 to-rose-500 text-white' : 
+                id === 'view-tiktok' ? 'bg-gradient-to-r from-pink-600 to-rose-500 text-white' :
                 id === 'view-youtube' ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white' :
                 id === 'post-threads' ? 'bg-gradient-to-r from-slate-300 to-slate-100 text-slate-900' :
                 id === 'seeding-vinfast' ? 'bg-gradient-to-r from-cyan-600 to-blue-500 text-white' :
@@ -275,6 +287,76 @@ const getShortDesc = (id: string) => {
       </div>
     </section>
   </div>
+
+  <!-- AGE VERIFICATION MODAL -->
+  <Teleport to="body">
+    <Transition name="age-modal">
+      <div v-if="showAgeModal"
+           class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+           style="background: rgba(0,0,0,0.88); backdrop-filter: blur(6px);"
+           @click.self="cancelAge">
+        <div class="age-modal-box relative w-full max-w-[380px] rounded-[28px] overflow-hidden"
+             style="background: linear-gradient(145deg, #0f0a02, #1a1000, #0c0800); border: 1.5px solid rgba(245,158,11,0.55); box-shadow: 0 0 60px rgba(245,158,11,0.25), 0 0 120px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);">
+
+          <div style="height:3px; background: linear-gradient(90deg, transparent, #f59e0b, #fbbf24, #f59e0b, transparent);"></div>
+
+          <div class="absolute top-0 left-0 w-16 h-16 pointer-events-none" style="background: radial-gradient(circle at 0% 0%, rgba(245,158,11,0.12), transparent 70%);"></div>
+          <div class="absolute top-0 right-0 w-16 h-16 pointer-events-none" style="background: radial-gradient(circle at 100% 0%, rgba(245,158,11,0.12), transparent 70%);"></div>
+
+          <div class="px-6 pt-6 pb-7 text-center space-y-4">
+            <div class="flex justify-center">
+              <div class="w-16 h-16 rounded-full flex items-center justify-center age-shield-icon"
+                   style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05)); border: 1.5px solid rgba(245,158,11,0.4); box-shadow: 0 0 24px rgba(245,158,11,0.3);">
+                <svg viewBox="0 0 24 24" fill="none" class="w-8 h-8">
+                  <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round"/>
+                  <text x="12" y="16" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="900" font-family="Arial" style="font-style:italic">18+</text>
+                </svg>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <p class="text-[11px] font-black uppercase tracking-[3px]"
+                 style="color:#f59e0b; text-shadow: 0 0 12px rgba(245,158,11,0.6);">
+                XÁC NHẬN ĐỘ TUỔI
+              </p>
+              <h3 class="text-[15px] font-black uppercase leading-snug tracking-tight"
+                  style="color:#fde68a; text-shadow: 0 0 20px rgba(251,191,36,0.4);">
+                {{ pendingJobTitle }}
+              </h3>
+            </div>
+
+            <div class="rounded-2xl px-5 py-4"
+                 style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2);">
+              <p class="text-[13px] font-semibold leading-relaxed" style="color:#e2d4a0;">
+                Công việc này yêu cầu
+                <span class="font-black" style="color:#fbbf24;">đủ {{ pendingJobAge }} tuổi trở lên.</span>
+                <br/>Bạn đã đủ {{ pendingJobAge }} tuổi chưa?
+              </p>
+            </div>
+
+            <div class="flex gap-3 pt-1">
+              <button @click="cancelAge"
+                      class="flex-1 py-3.5 rounded-2xl font-black text-[12px] uppercase tracking-wide transition-all active:scale-95 hover:brightness-110"
+                      style="background: linear-gradient(135deg, #7f1d1d, #991b1b); color: #fecaca; border: 1.5px solid rgba(239,68,68,0.5); box-shadow: 0 0 20px rgba(239,68,68,0.35), inset 0 1px 0 rgba(255,255,255,0.05); text-shadow: 0 0 8px rgba(239,68,68,0.5);">
+                ✕ HUỶ
+              </button>
+              <button @click="confirmAge"
+                      class="flex-1 py-3.5 rounded-2xl font-black text-[12px] uppercase tracking-wide transition-all active:scale-95 age-confirm-btn"
+                      style="background: linear-gradient(135deg, #d97706, #f59e0b, #fbbf24); color: #1c0d00; border: 1.5px solid rgba(251,191,36,0.6); text-shadow: 0 1px 0 rgba(255,255,255,0.2);">
+                ✓ ĐÃ ĐỦ 18
+              </button>
+            </div>
+
+            <p class="text-[9px] tracking-wider uppercase" style="color: rgba(120,100,60,0.7);">
+              Click ra ngoài để đóng
+            </p>
+          </div>
+
+          <div style="height:2px; background: linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent);"></div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -285,6 +367,24 @@ const getShortDesc = (id: string) => {
   0%, 100% { transform: translateY(0) rotate(12deg); }
   50% { transform: translateY(-20px) rotate(15deg); }
 }
-</style>
 
-```
+.age-modal-enter-active { transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+.age-modal-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
+.age-modal-enter-from  { opacity: 0; }
+.age-modal-leave-to    { opacity: 0; }
+.age-modal-enter-from .age-modal-box { transform: scale(0.85) translateY(20px); }
+.age-modal-enter-to   .age-modal-box { transform: scale(1) translateY(0); }
+.age-modal-leave-to   .age-modal-box { transform: scale(0.9); }
+
+@keyframes shield-pulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(245,158,11,0.3); }
+  50%       { box-shadow: 0 0 40px rgba(245,158,11,0.6), 0 0 70px rgba(245,158,11,0.15); }
+}
+.age-shield-icon { animation: shield-pulse 2s ease-in-out infinite; }
+
+@keyframes confirm-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.4); }
+  50%       { box-shadow: 0 0 35px rgba(245,158,11,0.8), 0 0 60px rgba(245,158,11,0.2); }
+}
+.age-confirm-btn { animation: confirm-glow 1.6s ease-in-out infinite; }
+</style>

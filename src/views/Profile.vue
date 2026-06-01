@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { auth, db } from '@/firebase'
-import { doc, onSnapshot, collection, query, where } from "firebase/firestore"
+import { ref, computed, inject } from 'vue'
+import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const userUid = ref('')
-const userData = ref<any>(null)
-const reports = ref<any[]>([])
-const isPageLoading = ref(true) 
+const userData = inject<Ref<any>>('userData', ref(null))
+const reports = inject<Ref<any[]>>('myReports', ref([]))
+const isPageLoading = computed(() => !userData.value)
 
 // Thống kê (Dữ liệu thật từ Firebase)
 const stats = computed(() => {
@@ -29,25 +27,6 @@ const stats = computed(() => {
 const progress10 = computed(() => Math.min((stats.value.approved / 10) * 100, 100))
 const canClaim10 = computed(() => stats.value.approved >= 10)
 
-onMounted(() => {
-  auth.onAuthStateChanged((user) => {
-    if (user) {
-      userUid.value = user.uid
-      
-      onSnapshot(doc(db, "users", user.uid), (snap) => {
-        if (snap.exists()) userData.value = snap.data()
-      })
-      
-      const q = query(collection(db, "reports"), where("uid", "==", user.uid))
-      onSnapshot(q, (snap) => {
-        reports.value = snap.docs.map(d => d.data())
-        isPageLoading.value = false
-      })
-    } else {
-      router.push('/login')
-    }
-  })
-})
 </script>
 
 <template>

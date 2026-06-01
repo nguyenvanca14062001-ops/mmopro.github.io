@@ -1,25 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { auth, db } from '../firebase' 
-import { doc, onSnapshot } from "firebase/firestore"
-import { onAuthStateChanged } from "firebase/auth"
+import { ref, computed, inject } from 'vue'
+import type { Ref } from 'vue'
 
-const userBalance = ref(0)
-const userName = ref('MEMBER')
-
-onMounted(() => {
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      const userRef = doc(db, "users", user.uid)
-      onSnapshot(userRef, (docSnap) => {
-        if (docSnap.exists()) {
-          userBalance.value = docSnap.data().balance || 0
-          userName.value = docSnap.data().username || 'MEMBER'
-        }
-      })
-    }
-  })
-})
+const injectedUserData = inject<Ref<any>>('userData', ref(null))
+const userBalance = computed(() => injectedUserData.value?.balance || 0)
+const userName = computed(() => injectedUserData.value?.username || 'MEMBER')
 </script>
 
 <template>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { auth, db } from '@/firebase' 
 import { onAuthStateChanged, signOut } from "firebase/auth" 
 import { doc, onSnapshot, collection, query, where, updateDoc, increment } from "firebase/firestore"
 
 // --- IMPORT COMPONENT ---
+import { jobsData } from '@/data/jobs'
 import AppBrowserBlocker from '@/components/AppBrowserBlocker.vue'
 import RewardPopup from '@/components/RewardPopup.vue'
 import Sidebar from '@/components/home/Sidebar.vue'
@@ -33,12 +34,23 @@ const windowWidth = ref(0)
 const showWelcomePopup = ref(false)
 const showBankModal = ref(false)
 
+const showAgeConfirmModal = ref(false)
+const ageConfirmJobId = ref('')
+const ageConfirmJobTitle = ref('')
+const ageConfirmAge = ref(18)
+
 const isAdminRoute = computed(() => route.path.includes('admin'))
 const username = ref(localStorage.getItem('mmo_username') || 'Member')
 const userBalance = ref(Number(localStorage.getItem('mmo_balance')) || 0)
 
 const myReports = ref<any[]>([])
 const myWithdrawals = ref<any[]>([])
+const userData = ref<any>(null)
+
+provide('userData', userData)
+provide('myReports', myReports)
+provide('myWithdrawals', myWithdrawals)
+provide('isDataLoading', isDataLoading)
 
 // ============================================================================
 // LOGIC POPUP: KHÁCH ĐỌC THÔNG BÁO TỪ ADMIN
@@ -154,6 +166,7 @@ onMounted(() => {
       onSnapshot(doc(db, "users", user.uid), async (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data()
+          userData.value = data
           username.value = data.username || data.fullName || 'Member'
           const realBalance = data.balance ? Number(data.balance) : 0;
           userBalance.value = realBalance;
@@ -189,8 +202,8 @@ onMounted(() => {
         myWithdrawals.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       })
     } else if (!isAdminRoute.value) {
-      isLoggedIn.value = false; isDataLoading.value = false; username.value = 'Member'; userBalance.value = 0; 
-      myReports.value = []; myWithdrawals.value = []; localStorage.clear()
+      isLoggedIn.value = false; isDataLoading.value = false; username.value = 'Member'; userBalance.value = 0;
+      myReports.value = []; myWithdrawals.value = []; userData.value = null; localStorage.clear()
     }
   })
 })
@@ -220,8 +233,22 @@ const handleReceiveJob = (jobId: string) => {
   if (jobId === 'APP NGÂN HÀNG' || jobId === 'app-ngan-hang') {
     showBankModal.value = true
   } else {
-    router.push(`/job/${jobId}`)
+    ageConfirmJobId.value = jobId
+    ageConfirmJobTitle.value = jobsData[jobId]?.title || jobId
+    ageConfirmAge.value = jobId === 'app-chung-khoan-3' ? 20 : 18
+    showAgeConfirmModal.value = true
   }
+}
+
+const confirmAgeAndNavigate = () => {
+  showAgeConfirmModal.value = false
+  router.push(`/job/${ageConfirmJobId.value}`)
+}
+
+const cancelAgeConfirm = () => {
+  showAgeConfirmModal.value = false
+  ageConfirmJobId.value = ''
+  ageConfirmJobTitle.value = ''
 }
 
 const handleScrollToHistory = () => {
@@ -530,6 +557,74 @@ const contactSupport = (t: string) => {
     <RewardPopup />
 
   </div>
+
+  <!-- AGE CONFIRMATION MODAL -->
+  <Teleport to="body">
+    <Transition name="age-modal-app">
+      <div v-if="showAgeConfirmModal"
+           class="fixed inset-0 flex items-center justify-center p-4"
+           style="background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);z-index:99999;"
+           @click.self="cancelAgeConfirm">
+        <div class="relative w-full max-w-[380px] rounded-[28px] overflow-hidden age-confirm-box"
+             style="background:linear-gradient(145deg,#0f0a02,#1a1000,#0c0800);border:1.5px solid rgba(245,158,11,0.55);box-shadow:0 0 60px rgba(245,158,11,0.25),0 0 120px rgba(0,0,0,0.9),inset 0 1px 0 rgba(255,255,255,0.05);">
+
+          <div style="height:3px;background:linear-gradient(90deg,transparent,#f59e0b,#fbbf24,#f59e0b,transparent);"></div>
+
+          <div class="absolute top-0 left-0 w-16 h-16 pointer-events-none" style="background:radial-gradient(circle at 0% 0%,rgba(245,158,11,0.12),transparent 70%);"></div>
+          <div class="absolute top-0 right-0 w-16 h-16 pointer-events-none" style="background:radial-gradient(circle at 100% 0%,rgba(245,158,11,0.12),transparent 70%);"></div>
+
+          <div class="px-6 pt-6 pb-7 text-center space-y-4">
+            <div class="flex justify-center">
+              <div class="w-16 h-16 rounded-full flex items-center justify-center age-shield-app"
+                   style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));border:1.5px solid rgba(245,158,11,0.4);box-shadow:0 0 24px rgba(245,158,11,0.3);">
+                <svg viewBox="0 0 24 24" fill="none" class="w-8 h-8">
+                  <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round"/>
+                  <text x="12" y="16" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="900" font-family="Arial" style="font-style:italic">18+</text>
+                </svg>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <p class="text-[11px] font-black uppercase tracking-[3px]"
+                 style="color:#f59e0b;text-shadow:0 0 12px rgba(245,158,11,0.6);">XÁC NHẬN ĐỘ TUỔI</p>
+              <h3 class="text-[15px] font-black uppercase leading-snug tracking-tight"
+                  style="color:#fde68a;text-shadow:0 0 20px rgba(251,191,36,0.4);">
+                {{ ageConfirmJobTitle }}
+              </h3>
+            </div>
+
+            <div class="rounded-2xl px-5 py-4"
+                 style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);">
+              <p class="text-[13px] font-semibold leading-relaxed" style="color:#e2d4a0;">
+                Công việc này yêu cầu
+                <span class="font-black" style="color:#fbbf24;">đủ {{ ageConfirmAge }} tuổi trở lên.</span><br/>
+                Bạn đã đủ {{ ageConfirmAge }} tuổi chưa?
+              </p>
+            </div>
+
+            <div class="flex gap-3 pt-1">
+              <button @click="cancelAgeConfirm"
+                      class="flex-1 py-3.5 rounded-2xl font-black text-[12px] uppercase tracking-wide transition-all active:scale-95 hover:brightness-110"
+                      style="background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fecaca;border:1.5px solid rgba(239,68,68,0.5);box-shadow:0 0 20px rgba(239,68,68,0.35),inset 0 1px 0 rgba(255,255,255,0.05);text-shadow:0 0 8px rgba(239,68,68,0.5);">
+                ✕ HUỶ
+              </button>
+              <button @click="confirmAgeAndNavigate"
+                      class="flex-1 py-3.5 rounded-2xl font-black text-[12px] uppercase tracking-wide transition-all active:scale-95 age-btn-confirm-app"
+                      style="background:linear-gradient(135deg,#d97706,#f59e0b,#fbbf24);color:#1c0d00;border:1.5px solid rgba(251,191,36,0.6);text-shadow:0 1px 0 rgba(255,255,255,0.2);">
+                ✓ ĐÃ ĐỦ 18
+              </button>
+            </div>
+
+            <p class="text-[9px] tracking-wider uppercase" style="color:rgba(120,100,60,0.7);">
+              Click ra ngoài để đóng
+            </p>
+          </div>
+
+          <div style="height:2px;background:linear-gradient(90deg,transparent,rgba(245,158,11,0.4),transparent);"></div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style>
@@ -575,8 +670,28 @@ const contactSupport = (t: string) => {
   transition: all 0.3s ease; 
   cursor: pointer; 
 }
-.bank-logo:hover { 
-  filter: brightness(0) invert(1) opacity(1); 
-  transform: scale(1.1); 
+.bank-logo:hover {
+  filter: brightness(0) invert(1) opacity(1);
+  transform: scale(1.1);
 }
+
+.age-modal-app-enter-active { transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+.age-modal-app-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
+.age-modal-app-enter-from  { opacity: 0; }
+.age-modal-app-leave-to    { opacity: 0; }
+.age-modal-app-enter-from .age-confirm-box { transform: scale(0.85) translateY(20px); }
+.age-modal-app-enter-to   .age-confirm-box { transform: scale(1) translateY(0); }
+.age-modal-app-leave-to   .age-confirm-box { transform: scale(0.9); }
+
+@keyframes shield-pulse-app {
+  0%, 100% { box-shadow: 0 0 24px rgba(245,158,11,0.3); }
+  50%       { box-shadow: 0 0 40px rgba(245,158,11,0.6), 0 0 70px rgba(245,158,11,0.15); }
+}
+.age-shield-app { animation: shield-pulse-app 2s ease-in-out infinite; }
+
+@keyframes confirm-glow-app {
+  0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.4); }
+  50%       { box-shadow: 0 0 35px rgba(245,158,11,0.8), 0 0 60px rgba(245,158,11,0.2); }
+}
+.age-btn-confirm-app { animation: confirm-glow-app 1.6s ease-in-out infinite; }
 </style>

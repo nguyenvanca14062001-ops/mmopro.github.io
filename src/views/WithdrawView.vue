@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
+import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth, db } from '@/firebase'
 import { collection, addDoc, doc, updateDoc, onSnapshot, query, where, getDocs } from "firebase/firestore"
@@ -9,16 +10,22 @@ const router = useRouter()
 const amount = ref<number | null>(null)
 const bankInfo = ref('')
 const isLoading = ref(false)
-const userBalance = ref(0)
 const currentUser = ref<any>(null)
-const hasPendingWithdraw = ref(false)
+const injectedUserData = inject<Ref<any>>('userData', ref(null))
+const userBalance = computed(() => injectedUserData.value?.balance || 0)
+const hasPendingWithdraw = computed(() => injectedUserData.value?.hasPendingWithdraw || false)
 const approvedJobsCount = ref(0)
+const previous200kWithdrawalsCount = ref(0)
 
 // BIẾN CHO POPUP
 const showConfirmModal = ref(false)
 
 // DANH SÁCH MỐC RÚT THEO YÊU CẦU MỚI NHẤT
 const withdrawOptions = [250000, 300000, 500000, 650000, 800000, 1000000, 2000000]
+
+const requiredJobs = computed(() => {
+  return previous200kWithdrawalsCount.value > 0 ? 10 : 9
+})
 
 // FORMAT SỐ ĐẸP
 const formatNumber = (num: number) => {
@@ -72,12 +79,6 @@ onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       currentUser.value = user
-      onSnapshot(doc(db, "users", user.uid), (docSnap) => {
-        if (docSnap.exists()) {
-          userBalance.value = docSnap.data().balance || 0
-          hasPendingWithdraw.value = docSnap.data().hasPendingWithdraw || false
-        }
-      })
 
       // ĐẾM SỐ LƯỢNG JOB ĐÃ HOÀN THÀNH (APPROVED)
       try {
@@ -87,6 +88,18 @@ onMounted(() => {
       } catch (err) {
         console.error("Lỗi khi đếm số job:", err);
       }
+
+      const qWithdrawals = query(
+        collection(db, "withdrawals"),
+        where("uid", "==", user.uid),
+        where("status", "==", "approved")
+      )
+      onSnapshot(qWithdrawals, (snap) => {
+        previous200kWithdrawalsCount.value = snap.docs.filter(d => {
+          const data = d.data()
+          return data.amount === 200000 || data.amountXu === 200000
+        }).length
+      })
 
     } else {
       router.push('/login')
